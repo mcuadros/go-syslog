@@ -1,14 +1,14 @@
 package syslogparser
 
-type Priority struct {
-	Facility
-	Severity
+type priority struct {
+	f facility
+	s severity
 }
 
-type Facility struct {
-	Value int
+type facility struct {
+	value int
 }
 
-type Severity struct {
-	Value int
+type severity struct {
+	value int
 }

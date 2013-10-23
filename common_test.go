@@ -72,9 +72,9 @@ func (s *CommonTestSuite) TestParsePriority_Ok(c *C) {
 func (s *CommonTestSuite) TestNewPriority(c *C) {
 	obtained := newPriority(165)
 
-	expected := Priority{
-		Facility: Facility{Value: 20},
-		Severity: Severity{Value: 5},
+	expected := priority{
+		f: facility{value: 20},
+		s: severity{value: 5},
 	}
 
 	c.Assert(obtained, DeepEquals, expected)
@@ -101,14 +101,14 @@ func (s *CommonTestSuite) TestParseVersion_Ok(c *C) {
 	assertVersion(c, 1, buff, start, nil)
 }
 
-func assertPriority(c *C, p Priority, b []byte, i int, e error) {
-	obtained, err := ParsePriority(b, &i, len(b))
+func assertPriority(c *C, p priority, b []byte, i int, e error) {
+	obtained, err := parsePriority(b, &i, len(b))
 	c.Assert(obtained, DeepEquals, p)
 	c.Assert(err, Equals, e)
 }
 
 func assertVersion(c *C, version int, b []byte, i int, e error) {
-	obtained, err := ParseVersion(b, &i, len(b))
+	obtained, err := parseVersion(b, &i, len(b))
 	c.Assert(obtained, Equals, version)
 	c.Assert(err, Equals, e)
 }

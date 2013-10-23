@@ -12,7 +12,7 @@ const (
 )
 
 // https://tools.ietf.org/html/rfc3164#section-4.1
-func ParsePriority(buff []byte, start *int, l int) (Priority, error) {
+func parsePriority(buff []byte, start *int, l int) (priority, error) {
 	pri := newPriority(0)
 
 	if l <= 0 {
@@ -59,7 +59,7 @@ func ParsePriority(buff []byte, start *int, l int) (Priority, error) {
 }
 
 // https://tools.ietf.org/html/rfc5424#section-6.2.2
-func ParseVersion(buff []byte, start *int, l int) (int, error) {
+func parseVersion(buff []byte, start *int, l int) (int, error) {
 	if *start >= l {
 		return VERSION_NONE, ErrVersionNotFound
 	}
@@ -82,15 +82,12 @@ func isDigit(c byte) bool {
 	return c >= '0' && c <= '9'
 }
 
-func newPriority(p int) Priority {
+func newPriority(p int) priority {
 	// The Priority value is calculated by first multiplying the Facility
 	// number by 8 and then adding the numerical value of the Severity.
 
-	f := Facility{Value: p / 8}
-	s := Severity{Value: p % 8}
-
-	return Priority{
-		Facility: f,
-		Severity: s,
+	return priority{
+		f: facility{value: p / 8},
+		s: severity{value: p % 8},
 	}
 }
