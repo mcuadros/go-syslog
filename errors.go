@@ -9,7 +9,6 @@ var (
 	ErrPriorityNonDigit = &ParserError{"Non digit found in priority"}
 
 	ErrVersionNotFound = &ParserError{"Can not find version"}
-	ErrVersionNonDigit = &ParserError{"Non digit found for version"}
 )
 
 type ParserError struct {

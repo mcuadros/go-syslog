@@ -66,17 +66,19 @@ func parseVersion(buff []byte, cursor *int, l int) (int, error) {
 	}
 
 	c := buff[*cursor]
+	*cursor++
 
+	// XXX : not a version, not an error though as RFC 3164 does not support it
 	if !isDigit(c) {
-		return VERSION_NONE, ErrVersionNonDigit
+		return VERSION_NONE, nil
 	}
 
 	v, e := strconv.Atoi(string(c))
 	if e != nil {
+		*cursor--
 		return VERSION_NONE, e
 	}
 
-	*cursor++
 	return v, nil
 }
 
