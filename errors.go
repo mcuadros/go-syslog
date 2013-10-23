@@ -7,6 +7,9 @@ var (
 	ErrPriorityTooShort = &ParserError{"Priority field too short"}
 	ErrPriorityTooLong  = &ParserError{"Priority field too long"}
 	ErrPriorityNonDigit = &ParserError{"Non digit found in priority"}
+
+	ErrVersionNotFound = &ParserError{"Can not find version"}
+	ErrVersionNonDigit = &ParserError{"Non digit found for version"}
 )
 
 type ParserError struct {

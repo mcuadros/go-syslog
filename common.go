@@ -7,6 +7,8 @@ import (
 const (
 	PRI_PART_START = '<'
 	PRI_PART_END   = '>'
+
+	VERSION_NONE = -1
 )
 
 // https://tools.ietf.org/html/rfc3164#section-4.1
@@ -54,6 +56,26 @@ func ParsePriority(buff []byte, start *int, l int) (Priority, error) {
 	}
 
 	return pri, ErrPriorityNoEnd
+}
+
+// https://tools.ietf.org/html/rfc5424#section-6.2.2
+func ParseVersion(buff []byte, start *int, l int) (int, error) {
+	if *start >= l {
+		return VERSION_NONE, ErrVersionNotFound
+	}
+
+	c := buff[*start]
+
+	if !isDigit(c) {
+		return VERSION_NONE, ErrVersionNonDigit
+	}
+
+	v, e := strconv.Atoi(string(c))
+	if e != nil {
+		return VERSION_NONE, e
+	}
+
+	return v, nil
 }
 
 func isDigit(c byte) bool {

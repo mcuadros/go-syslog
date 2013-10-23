@@ -18,7 +18,7 @@ func (s *CommonTestSuite) TestParsePriority_Empty(c *C) {
 	buff := []byte("")
 	start := 0
 
-	runAsserts(c, pri, buff, start, ErrPriorityEmpty)
+	assertPriority(c, pri, buff, start, ErrPriorityEmpty)
 }
 
 func (s *CommonTestSuite) TestParsePriority_NoStart(c *C) {
@@ -26,7 +26,7 @@ func (s *CommonTestSuite) TestParsePriority_NoStart(c *C) {
 	buff := []byte("7>")
 	start := 0
 
-	runAsserts(c, pri, buff, start, ErrPriorityNoStart)
+	assertPriority(c, pri, buff, start, ErrPriorityNoStart)
 }
 
 func (s *CommonTestSuite) TestParsePriority_NoEnd(c *C) {
@@ -34,7 +34,7 @@ func (s *CommonTestSuite) TestParsePriority_NoEnd(c *C) {
 	buff := []byte("<77")
 	start := 0
 
-	runAsserts(c, pri, buff, start, ErrPriorityNoEnd)
+	assertPriority(c, pri, buff, start, ErrPriorityNoEnd)
 }
 
 func (s *CommonTestSuite) TestParsePriority_TooShort(c *C) {
@@ -42,7 +42,7 @@ func (s *CommonTestSuite) TestParsePriority_TooShort(c *C) {
 	buff := []byte("<>")
 	start := 0
 
-	runAsserts(c, pri, buff, start, ErrPriorityTooShort)
+	assertPriority(c, pri, buff, start, ErrPriorityTooShort)
 }
 
 func (s *CommonTestSuite) TestParsePriority_TooLong(c *C) {
@@ -50,7 +50,7 @@ func (s *CommonTestSuite) TestParsePriority_TooLong(c *C) {
 	buff := []byte("<1233>")
 	start := 0
 
-	runAsserts(c, pri, buff, start, ErrPriorityTooLong)
+	assertPriority(c, pri, buff, start, ErrPriorityTooLong)
 }
 
 func (s *CommonTestSuite) TestParsePriority_NoDigits(c *C) {
@@ -58,7 +58,7 @@ func (s *CommonTestSuite) TestParsePriority_NoDigits(c *C) {
 	buff := []byte("<7a8>")
 	start := 0
 
-	runAsserts(c, pri, buff, start, ErrPriorityNonDigit)
+	assertPriority(c, pri, buff, start, ErrPriorityNonDigit)
 }
 
 func (s *CommonTestSuite) TestParsePriority_Ok(c *C) {
@@ -66,7 +66,7 @@ func (s *CommonTestSuite) TestParsePriority_Ok(c *C) {
 	buff := []byte("<190>")
 	start := 0
 
-	runAsserts(c, pri, buff, start, nil)
+	assertPriority(c, pri, buff, start, nil)
 }
 
 func (s *CommonTestSuite) TestNewPriority(c *C) {
@@ -80,8 +80,35 @@ func (s *CommonTestSuite) TestNewPriority(c *C) {
 	c.Assert(obtained, DeepEquals, expected)
 }
 
-func runAsserts(c *C, p Priority, b []byte, i int, e error) {
+func (s *CommonTestSuite) TestParseVersion_NotFound(c *C) {
+	buff := []byte("<123>")
+	start := 5
+
+	assertVersion(c, VERSION_NONE, buff, start, ErrVersionNotFound)
+}
+
+func (s *CommonTestSuite) TestParseVersion_NonDigit(c *C) {
+	buff := []byte("<123>a")
+	start := 5
+
+	assertVersion(c, VERSION_NONE, buff, start, ErrVersionNonDigit)
+}
+
+func (s *CommonTestSuite) TestParseVersion_Ok(c *C) {
+	buff := []byte("<123>1")
+	start := 5
+
+	assertVersion(c, 1, buff, start, nil)
+}
+
+func assertPriority(c *C, p Priority, b []byte, i int, e error) {
 	obtained, err := ParsePriority(b, &i, len(b))
 	c.Assert(obtained, DeepEquals, p)
+	c.Assert(err, Equals, e)
+}
+
+func assertVersion(c *C, version int, b []byte, i int, e error) {
+	obtained, err := ParseVersion(b, &i, len(b))
+	c.Assert(obtained, Equals, version)
 	c.Assert(err, Equals, e)
 }
