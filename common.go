@@ -12,32 +12,33 @@ const (
 )
 
 // https://tools.ietf.org/html/rfc3164#section-4.1
-func parsePriority(buff []byte, start *int, l int) (priority, error) {
+func parsePriority(buff []byte, cursor *int, l int) (priority, error) {
 	pri := newPriority(0)
 
 	if l <= 0 {
 		return pri, ErrPriorityEmpty
 	}
 
-	if buff[*start] != PRI_PART_START {
+	if buff[*cursor] != PRI_PART_START {
 		return pri, ErrPriorityNoStart
 	}
 
-	cursor := 1
+	i := 1
 	priDigit := 0
 
-	for cursor < l {
-		if cursor >= 5 {
+	for i < l {
+		if i >= 5 {
 			return pri, ErrPriorityTooLong
 		}
 
-		c := buff[cursor]
+		c := buff[i]
 
 		if c == PRI_PART_END {
-			if cursor == 1 {
+			if i == 1 {
 				return pri, ErrPriorityTooShort
 			}
 
+			*cursor = i + 1
 			return newPriority(priDigit), nil
 		}
 
@@ -52,19 +53,19 @@ func parsePriority(buff []byte, start *int, l int) (priority, error) {
 			return pri, ErrPriorityNonDigit
 		}
 
-		cursor++
+		i++
 	}
 
 	return pri, ErrPriorityNoEnd
 }
 
 // https://tools.ietf.org/html/rfc5424#section-6.2.2
-func parseVersion(buff []byte, start *int, l int) (int, error) {
-	if *start >= l {
+func parseVersion(buff []byte, cursor *int, l int) (int, error) {
+	if *cursor >= l {
 		return VERSION_NONE, ErrVersionNotFound
 	}
 
-	c := buff[*start]
+	c := buff[*cursor]
 
 	if !isDigit(c) {
 		return VERSION_NONE, ErrVersionNonDigit
@@ -75,6 +76,7 @@ func parseVersion(buff []byte, start *int, l int) (int, error) {
 		return VERSION_NONE, e
 	}
 
+	*cursor++
 	return v, nil
 }
 
