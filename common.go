@@ -8,7 +8,7 @@ const (
 	PRI_PART_START = '<'
 	PRI_PART_END   = '>'
 
-	VERSION_NONE = -1
+	NO_VERSION = -1
 )
 
 // https://tools.ietf.org/html/rfc3164#section-4.1
@@ -62,7 +62,7 @@ func parsePriority(buff []byte, cursor *int, l int) (priority, error) {
 // https://tools.ietf.org/html/rfc5424#section-6.2.2
 func parseVersion(buff []byte, cursor *int, l int) (int, error) {
 	if *cursor >= l {
-		return VERSION_NONE, ErrVersionNotFound
+		return NO_VERSION, ErrVersionNotFound
 	}
 
 	c := buff[*cursor]
@@ -70,13 +70,13 @@ func parseVersion(buff []byte, cursor *int, l int) (int, error) {
 
 	// XXX : not a version, not an error though as RFC 3164 does not support it
 	if !isDigit(c) {
-		return VERSION_NONE, nil
+		return NO_VERSION, nil
 	}
 
 	v, e := strconv.Atoi(string(c))
 	if e != nil {
 		*cursor--
-		return VERSION_NONE, e
+		return NO_VERSION, e
 	}
 
 	return v, nil
