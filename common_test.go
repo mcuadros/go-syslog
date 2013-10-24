@@ -115,6 +115,20 @@ func (s *CommonTestSuite) BenchmarkParsePriority(c *C) {
 	}
 }
 
+func (s *CommonTestSuite) BenchmarkParseVersion(c *C) {
+	buff := []byte("<123>1")
+	start := 5
+	l := len(buff)
+
+	for i := 0; i < c.N; i++ {
+		start = 0
+		_, err := parseVersion(buff, &start, l)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
 func assertPriority(c *C, p priority, b []byte, s int, expS int, e error) {
 	obtained, err := parsePriority(b, &s, len(b))
 	c.Assert(obtained, DeepEquals, p)
