@@ -53,6 +53,50 @@ func parseHostname(buff []byte, cursor *int, l int) (string, error) {
 	return string(hostname), nil
 }
 
+func parseTag(buff []byte, cursor *int, l int) (string, error) {
+	var b byte
+	var endOfTag bool
+	var bracketOpen bool
+	var tag []byte
+	var err error
+	var found bool
+	var tooLong bool
+
+	from := *cursor
+	maxLen := from + 32
+
+	for {
+		b = buff[*cursor]
+		bracketOpen = (b == '[')
+		endOfTag = (b == ':' || b == ' ')
+		tooLong = (*cursor > maxLen)
+
+		if tooLong {
+			return "", ErrTagTooLong
+		}
+
+		// XXX : parse PID ?
+		if bracketOpen {
+			tag = buff[from:*cursor]
+			found = true
+		}
+
+		if endOfTag {
+			if !found {
+				tag = buff[from:*cursor]
+				found = true
+			}
+
+			*cursor++
+			break
+		}
+
+		*cursor++
+	}
+
+	return string(tag), err
+}
+
 func fixTimestampIfNeeded(ts *time.Time) {
 	now := time.Now()
 	y := ts.Year()

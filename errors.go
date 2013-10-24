@@ -13,6 +13,8 @@ var (
 	ErrVersionNotFound = &ParserError{"Can not find version"}
 
 	ErrTimestampUnknownFormat = &ParserError{"Timestamp format unknown"}
+
+	ErrTagTooLong = &ParserError{"Tag name too long"}
 )
 
 type ParserError struct {
