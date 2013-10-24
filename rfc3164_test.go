@@ -73,6 +73,20 @@ func (s *Rfc3164TestSuite) BenchmarkParseTimestamp(c *C) {
 	}
 }
 
+func (s *Rfc3164TestSuite) BenchmarkParseHostname(c *C) {
+	buff := []byte("gimli.local")
+	var start int
+	l := len(buff)
+
+	for i := 0; i < c.N; i++ {
+		start = 0
+		_, err := parseHostname(buff, &start, l)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
 func assertTimestamp(c *C, ts time.Time, b []byte, s int, expS int, e error) {
 	obtained, err := parseTimestamp(b, &s, len(b))
 	c.Assert(obtained, Equals, ts)
