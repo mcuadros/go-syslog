@@ -39,6 +39,26 @@ func (s *Rfc3164TestSuite) TestParseTimestamp_Valid(c *C) {
 	assertTimestamp(c, ts, buff, start, len(buff), nil)
 }
 
+func (s *Rfc3164TestSuite) TestParseHostname_Invalid(c *C) {
+	// XXX : no year specified. Assumed current year
+	// XXX : no timezone specified. Assume UTC
+	buff := []byte("host name")
+	start := 0
+	hostname := "host"
+
+	assertHostname(c, hostname, buff, start, len("host")+1, nil)
+}
+
+func (s *Rfc3164TestSuite) TestParseHostname_Valid(c *C) {
+	// XXX : no year specified. Assumed current year
+	// XXX : no timezone specified. Assume UTC
+	buff := []byte("ubuntu11.somehost.com")
+	start := 0
+	hostname := string(buff)
+
+	assertHostname(c, hostname, buff, start, len(buff), nil)
+}
+
 func (s *Rfc3164TestSuite) BenchmarkParseTimestamp(c *C) {
 	buff := []byte("Oct 11 22:14:15")
 	var start int
@@ -56,6 +76,13 @@ func (s *Rfc3164TestSuite) BenchmarkParseTimestamp(c *C) {
 func assertTimestamp(c *C, ts time.Time, b []byte, s int, expS int, e error) {
 	obtained, err := parseTimestamp(b, &s, len(b))
 	c.Assert(obtained, Equals, ts)
+	c.Assert(s, Equals, expS)
+	c.Assert(err, Equals, e)
+}
+
+func assertHostname(c *C, h string, b []byte, s int, expS int, e error) {
+	obtained, err := parseHostname(b, &s, len(b))
+	c.Assert(obtained, Equals, h)
 	c.Assert(s, Equals, expS)
 	c.Assert(err, Equals, e)
 }

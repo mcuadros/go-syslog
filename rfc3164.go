@@ -31,6 +31,28 @@ func parseTimestamp(buff []byte, cursor *int, l int) (time.Time, error) {
 	return ts, nil
 }
 
+func parseHostname(buff []byte, cursor *int, l int) (string, error) {
+	from := *cursor
+	var to int
+
+	for to = from; to < l; to++ {
+		if buff[to] == ' ' {
+			break
+		}
+	}
+
+	hostname := buff[from:to]
+
+	*cursor += to
+
+	// XXX : Start for the next parser
+	if *cursor < l {
+		*cursor++
+	}
+
+	return string(hostname), nil
+}
+
 func fixTimestampIfNeeded(ts *time.Time) {
 	now := time.Now()
 	y := ts.Year()
