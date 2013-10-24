@@ -97,6 +97,14 @@ func parseTag(buff []byte, cursor *int, l int) (string, error) {
 	return string(tag), err
 }
 
+func parseContent(buff []byte, cursor *int, l int) (string, error) {
+	if *cursor > l {
+		return "", ErrEOL
+	}
+
+	return string(buff[*cursor:l]), nil
+}
+
 func fixTimestampIfNeeded(ts *time.Time) {
 	now := time.Now()
 	y := ts.Year()
