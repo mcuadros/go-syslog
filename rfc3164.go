@@ -4,9 +4,35 @@ import (
 	"time"
 )
 
+type rfc3164Header struct {
+	timestamp time.Time
+	hostname  string
+}
+
+func parseHeader(buff []byte, cursor *int, l int) (rfc3164Header, error) {
+	hdr := rfc3164Header{}
+	var err error
+
+	ts, err := parseTimestamp(buff, cursor, l)
+	if err != nil {
+		return hdr, err
+	}
+
+	hostname, err := parseHostname(buff, cursor, l)
+	if err != nil {
+		return hdr, err
+	}
+
+	hdr.timestamp = ts
+	hdr.hostname = hostname
+
+	return hdr, nil
+}
+
 // https://tools.ietf.org/html/rfc3164#section-4.1.2
 func parseTimestamp(buff []byte, cursor *int, l int) (time.Time, error) {
 	var ts time.Time
+	var err error
 
 	tsFmt := "Jan 02 15:04:05"
 	// len(fmt)
@@ -18,16 +44,27 @@ func parseTimestamp(buff []byte, cursor *int, l int) (time.Time, error) {
 	}
 
 	sub := buff[*cursor:tsFmtLen]
-	ts, err := time.Parse(tsFmt, string(sub))
+	ts, err = time.Parse(tsFmt, string(sub))
 	if err != nil {
-		// XXX : where to move the cursor in this situation ?
 		*cursor = len(sub)
+
+		// XXX : If the timestamp is invalid we try to push the cursor one byte
+		// XXX : further, in case it is a space
+		if (*cursor < l) && (buff[*cursor] == ' ') {
+			*cursor++
+		}
+
 		return ts, ErrTimestampUnknownFormat
 	}
 
 	fixTimestampIfNeeded(&ts)
 
 	*cursor += 15
+
+	if (*cursor < l) && (buff[*cursor] == ' ') {
+		*cursor++
+	}
+
 	return ts, nil
 }
 
@@ -43,7 +80,7 @@ func parseHostname(buff []byte, cursor *int, l int) (string, error) {
 
 	hostname := buff[from:to]
 
-	*cursor += to
+	*cursor = to
 
 	// XXX : Start for the next parser
 	if *cursor < l {

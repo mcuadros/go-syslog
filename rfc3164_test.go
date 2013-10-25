@@ -10,6 +10,26 @@ type Rfc3164TestSuite struct {
 
 var _ = Suite(&Rfc3164TestSuite{})
 
+func (s *Rfc3164TestSuite) TestParseHeader_Valid(c *C) {
+	buff := []byte("Oct 11 22:14:15 mymachine ")
+	start := 0
+	now := time.Now()
+	hdr := rfc3164Header{
+		timestamp: time.Date(now.Year(), time.October, 11, 22, 14, 15, 0, time.UTC),
+		hostname:  "mymachine",
+	}
+
+	assertRfc3164Header(c, hdr, buff, start, len(buff), nil)
+}
+
+func (s *Rfc3164TestSuite) TestParseHeader_InvalidTimestamp(c *C) {
+	buff := []byte("Oct 34 32:72:82 mymachine ")
+	start := 0
+	hdr := rfc3164Header{}
+
+	assertRfc3164Header(c, hdr, buff, start, 16, ErrTimestampUnknownFormat)
+}
+
 func (s *Rfc3164TestSuite) TestParseTimestamp_TooLong(c *C) {
 	// XXX : <15 chars
 	buff := []byte("aaa")
@@ -25,6 +45,18 @@ func (s *Rfc3164TestSuite) TestParseTimestamp_Invalid(c *C) {
 	ts := new(time.Time)
 
 	assertTimestamp(c, *ts, buff, start, len(buff), ErrTimestampUnknownFormat)
+}
+
+func (s *Rfc3164TestSuite) TestParseTimestamp_TrailingSpace(c *C) {
+	// XXX : no year specified. Assumed current year
+	// XXX : no timezone specified. Assume UTC
+	buff := []byte("Oct 11 22:14:15 ")
+	start := 0
+
+	now := time.Now()
+	ts := time.Date(now.Year(), time.October, 11, 22, 14, 15, 0, time.UTC)
+
+	assertTimestamp(c, ts, buff, start, len(buff), nil)
 }
 
 func (s *Rfc3164TestSuite) TestParseTimestamp_Valid(c *C) {
@@ -129,6 +161,20 @@ func (s *Rfc3164TestSuite) BenchmarkParseTag(c *C) {
 	}
 }
 
+func (s *Rfc3164TestSuite) BenchmarkParseHeader(c *C) {
+	buff := []byte("Oct 11 22:14:15 mymachine ")
+	var start int
+	l := len(buff)
+
+	for i := 0; i < c.N; i++ {
+		start = 0
+		_, err := parseHeader(buff, &start, l)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
 func assertTimestamp(c *C, ts time.Time, b []byte, s int, expS int, e error) {
 	obtained, err := parseTimestamp(b, &s, len(b))
 	c.Assert(obtained, Equals, ts)
@@ -148,4 +194,11 @@ func assertTag(c *C, t string, b []byte, s int, expS int, e error) {
 	c.Assert(obtained, Equals, t)
 	c.Assert(s, Equals, expS)
 	c.Assert(err, Equals, e)
+}
+
+func assertRfc3164Header(c *C, hdr rfc3164Header, b []byte, s int, expS int, e error) {
+	obtained, err := parseHeader(b, &s, len(b))
+	c.Assert(err, Equals, e)
+	c.Assert(obtained, Equals, hdr)
+	c.Assert(s, Equals, expS)
 }
