@@ -1,6 +1,7 @@
 package syslogparser
 
 import (
+	"bytes"
 	. "launchpad.net/gocheck"
 	"time"
 )
@@ -117,6 +118,17 @@ func (s *Rfc3164TestSuite) TestParseTag_NoPid(c *C) {
 	tag := "apache2"
 
 	assertTag(c, tag, buff, start, len(buff), nil)
+}
+
+func (s *Rfc3164TestSuite) TestParseContent_Valid(c *C) {
+	buff := []byte(" foo bar baz quux ")
+	start := 0
+	content := string(bytes.Trim(buff, " "))
+
+	obtained, err := parseContent(buff, &start, len(buff))
+	c.Assert(err, Equals, ErrEOL)
+	c.Assert(obtained, Equals, content)
+	c.Assert(start, Equals, len(content))
 }
 
 func (s *Rfc3164TestSuite) BenchmarkParseTimestamp(c *C) {

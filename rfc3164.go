@@ -1,6 +1,7 @@
 package syslogparser
 
 import (
+	"bytes"
 	"time"
 )
 
@@ -140,7 +141,10 @@ func parseContent(buff []byte, cursor *int, l int) (string, error) {
 		return "", ErrEOL
 	}
 
-	return string(buff[*cursor:l]), nil
+	content := bytes.Trim(buff[*cursor:l], " ")
+	*cursor += len(content)
+
+	return string(content), ErrEOL
 }
 
 func fixTimestampIfNeeded(ts *time.Time) {
