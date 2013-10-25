@@ -18,6 +18,14 @@ type severity struct {
 	value int
 }
 
+type rfc3164Parser struct {
+	buff    []byte
+	cursor  int
+	l       int
+	header  rfc3164Header
+	message rfc3164Message
+}
+
 type rfc3164Header struct {
 	timestamp time.Time
 	hostname  string

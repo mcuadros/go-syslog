@@ -5,14 +5,6 @@ import (
 	"time"
 )
 
-type rfc3164Parser struct {
-	buff    []byte
-	cursor  int
-	l       int
-	header  rfc3164Header
-	message rfc3164Message
-}
-
 func newRfc3164Parser(buff []byte, cursor int, l int) *rfc3164Parser {
 	return &rfc3164Parser{
 		buff:   buff,
