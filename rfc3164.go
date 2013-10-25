@@ -5,16 +5,6 @@ import (
 	"time"
 )
 
-type rfc3164Header struct {
-	timestamp time.Time
-	hostname  string
-}
-
-type rfc3164Message struct {
-	tag     string
-	content string
-}
-
 func parseHeader(buff []byte, cursor *int, l int) (rfc3164Header, error) {
 	hdr := rfc3164Header{}
 	var err error
