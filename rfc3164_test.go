@@ -16,10 +16,10 @@ func (s *Rfc3164TestSuite) TestRfc3164Parser_Valid(c *C) {
 	start := 0
 	l := len(buff)
 
-	p := newRfc3164Parser(buff, &start, l)
+	p := newRfc3164Parser(buff, start, l)
 	expectedP := &rfc3164Parser{
 		buff:   buff,
-		cursor: &start,
+		cursor: start,
 		l:      l,
 	}
 
@@ -175,23 +175,26 @@ func (s *Rfc3164TestSuite) TestParseContent_Valid(c *C) {
 	start := 0
 	content := string(bytes.Trim(buff, " "))
 
-	obtained, err := parseContent(buff, &start, len(buff))
+	p := newRfc3164Parser(buff, start, len(buff))
+	obtained, err := p.parseContent()
 	c.Assert(err, Equals, ErrEOL)
 	c.Assert(obtained, Equals, content)
-	c.Assert(start, Equals, len(content))
+	c.Assert(p.cursor, Equals, len(content))
 }
 
 func (s *Rfc3164TestSuite) BenchmarkParseTimestamp(c *C) {
 	buff := []byte("Oct 11 22:14:15")
-	var start int
 	l := len(buff)
 
+	p := newRfc3164Parser(buff, 0, l)
+
 	for i := 0; i < c.N; i++ {
-		start = 0
-		_, err := parseTimestamp(buff, &start, l)
+		_, err := p.parseTimestamp()
 		if err != nil {
 			panic(err)
 		}
+
+		p.cursor = 0
 	}
 }
 
@@ -200,89 +203,103 @@ func (s *Rfc3164TestSuite) BenchmarkParseHostname(c *C) {
 	var start int
 	l := len(buff)
 
+	p := newRfc3164Parser(buff, start, l)
+
 	for i := 0; i < c.N; i++ {
-		start = 0
-		_, err := parseHostname(buff, &start, l)
+		_, err := p.parseHostname()
 		if err != nil {
 			panic(err)
 		}
+
+		p.cursor = 0
 	}
 }
 
 func (s *Rfc3164TestSuite) BenchmarkParseTag(c *C) {
 	buff := []byte("apache2[10]:")
-	var start int
 	l := len(buff)
 
+	p := newRfc3164Parser(buff, 0, l)
+
 	for i := 0; i < c.N; i++ {
-		start = 0
-		_, err := parseTag(buff, &start, l)
+		_, err := p.parseTag()
 		if err != nil {
 			panic(err)
 		}
+
+		p.cursor = 0
 	}
 }
 
 func (s *Rfc3164TestSuite) BenchmarkParseHeader(c *C) {
 	buff := []byte("Oct 11 22:14:15 mymachine ")
-	var start int
 	l := len(buff)
 
+	p := newRfc3164Parser(buff, 0, l)
+
 	for i := 0; i < c.N; i++ {
-		start = 0
-		_, err := parseHeader(buff, &start, l)
+		_, err := p.parseHeader()
 		if err != nil {
 			panic(err)
 		}
+
+		p.cursor = 0
 	}
 }
 
 func (s *Rfc3164TestSuite) BenchmarkParseMessage(c *C) {
 	buff := []byte("sometag[123]: foo bar baz blah quux")
-
 	var start int
 	l := len(buff)
 
+	p := newRfc3164Parser(buff, start, l)
+
 	for i := 0; i < c.N; i++ {
-		start = 0
-		_, err := parseMessage(buff, &start, l)
+		_, err := p.parseMessage()
 		if err != ErrEOL {
 			panic(err)
 		}
+
+		p.cursor = 0
 	}
 }
 
-func assertTimestamp(c *C, ts time.Time, b []byte, s int, expS int, e error) {
-	obtained, err := parseTimestamp(b, &s, len(b))
+func assertTimestamp(c *C, ts time.Time, b []byte, s int, expC int, e error) {
+	p := newRfc3164Parser(b, s, len(b))
+	obtained, err := p.parseTimestamp()
 	c.Assert(obtained, Equals, ts)
-	c.Assert(s, Equals, expS)
+	c.Assert(p.cursor, Equals, expC)
 	c.Assert(err, Equals, e)
 }
 
-func assertHostname(c *C, h string, b []byte, s int, expS int, e error) {
-	obtained, err := parseHostname(b, &s, len(b))
+func assertHostname(c *C, h string, b []byte, s int, expC int, e error) {
+	p := newRfc3164Parser(b, s, len(b))
+	obtained, err := p.parseHostname()
 	c.Assert(obtained, Equals, h)
-	c.Assert(s, Equals, expS)
+	c.Assert(p.cursor, Equals, expC)
 	c.Assert(err, Equals, e)
 }
 
-func assertTag(c *C, t string, b []byte, s int, expS int, e error) {
-	obtained, err := parseTag(b, &s, len(b))
+func assertTag(c *C, t string, b []byte, s int, expC int, e error) {
+	p := newRfc3164Parser(b, s, len(b))
+	obtained, err := p.parseTag()
 	c.Assert(obtained, Equals, t)
-	c.Assert(s, Equals, expS)
+	c.Assert(p.cursor, Equals, expC)
 	c.Assert(err, Equals, e)
 }
 
-func assertRfc3164Header(c *C, hdr rfc3164Header, b []byte, s int, expS int, e error) {
-	obtained, err := parseHeader(b, &s, len(b))
+func assertRfc3164Header(c *C, hdr rfc3164Header, b []byte, s int, expC int, e error) {
+	p := newRfc3164Parser(b, s, len(b))
+	obtained, err := p.parseHeader()
 	c.Assert(err, Equals, e)
 	c.Assert(obtained, Equals, hdr)
-	c.Assert(s, Equals, expS)
+	c.Assert(p.cursor, Equals, expC)
 }
 
-func assertRfc3164Message(c *C, msg rfc3164Message, b []byte, s int, expS int, e error) {
-	obtained, err := parseMessage(b, &s, len(b))
+func assertRfc3164Message(c *C, msg rfc3164Message, b []byte, s int, expC int, e error) {
+	p := newRfc3164Parser(b, s, len(b))
+	obtained, err := p.parseMessage()
 	c.Assert(err, Equals, e)
 	c.Assert(obtained, Equals, msg)
-	c.Assert(s, Equals, expS)
+	c.Assert(p.cursor, Equals, expC)
 }

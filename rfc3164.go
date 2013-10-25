@@ -7,13 +7,13 @@ import (
 
 type rfc3164Parser struct {
 	buff    []byte
-	cursor  *int
+	cursor  int
 	l       int
 	header  rfc3164Header
 	message rfc3164Message
 }
 
-func newRfc3164Parser(buff []byte, cursor *int, l int) *rfc3164Parser {
+func newRfc3164Parser(buff []byte, cursor int, l int) *rfc3164Parser {
 	return &rfc3164Parser{
 		buff:   buff,
 		cursor: cursor,
@@ -22,12 +22,12 @@ func newRfc3164Parser(buff []byte, cursor *int, l int) *rfc3164Parser {
 }
 
 func (p *rfc3164Parser) parse() error {
-	hdr, err := parseHeader(p.buff, p.cursor, p.l)
+	hdr, err := p.parseHeader()
 	if err != nil {
 		return err
 	}
 
-	msg, err := parseMessage(p.buff, p.cursor, p.l)
+	msg, err := p.parseMessage()
 	if err != ErrEOL {
 		return err
 	}
@@ -47,16 +47,16 @@ func (p *rfc3164Parser) dump() logParts {
 	}
 }
 
-func parseHeader(buff []byte, cursor *int, l int) (rfc3164Header, error) {
+func (p *rfc3164Parser) parseHeader() (rfc3164Header, error) {
 	hdr := rfc3164Header{}
 	var err error
 
-	ts, err := parseTimestamp(buff, cursor, l)
+	ts, err := p.parseTimestamp()
 	if err != nil {
 		return hdr, err
 	}
 
-	hostname, err := parseHostname(buff, cursor, l)
+	hostname, err := p.parseHostname()
 	if err != nil {
 		return hdr, err
 	}
@@ -67,16 +67,16 @@ func parseHeader(buff []byte, cursor *int, l int) (rfc3164Header, error) {
 	return hdr, nil
 }
 
-func parseMessage(buff []byte, cursor *int, l int) (rfc3164Message, error) {
+func (p *rfc3164Parser) parseMessage() (rfc3164Message, error) {
 	msg := rfc3164Message{}
 	var err error
 
-	tag, err := parseTag(buff, cursor, l)
+	tag, err := p.parseTag()
 	if err != nil {
 		return msg, err
 	}
 
-	content, err := parseContent(buff, cursor, l)
+	content, err := p.parseContent()
 	if err != ErrEOL {
 		return msg, err
 	}
@@ -88,7 +88,7 @@ func parseMessage(buff []byte, cursor *int, l int) (rfc3164Message, error) {
 }
 
 // https://tools.ietf.org/html/rfc3164#section-4.1.2
-func parseTimestamp(buff []byte, cursor *int, l int) (time.Time, error) {
+func (p *rfc3164Parser) parseTimestamp() (time.Time, error) {
 	var ts time.Time
 	var err error
 
@@ -96,20 +96,20 @@ func parseTimestamp(buff []byte, cursor *int, l int) (time.Time, error) {
 	// len(fmt)
 	tsFmtLen := 15
 
-	if *cursor+tsFmtLen > l {
-		*cursor = l
+	if p.cursor+tsFmtLen > p.l {
+		p.cursor = p.l
 		return ts, ErrEOL
 	}
 
-	sub := buff[*cursor:tsFmtLen]
+	sub := p.buff[p.cursor:tsFmtLen]
 	ts, err = time.Parse(tsFmt, string(sub))
 	if err != nil {
-		*cursor = len(sub)
+		p.cursor = len(sub)
 
 		// XXX : If the timestamp is invalid we try to push the cursor one byte
 		// XXX : further, in case it is a space
-		if (*cursor < l) && (buff[*cursor] == ' ') {
-			*cursor++
+		if (p.cursor < p.l) && (p.buff[p.cursor] == ' ') {
+			p.cursor++
 		}
 
 		return ts, ErrTimestampUnknownFormat
@@ -117,39 +117,39 @@ func parseTimestamp(buff []byte, cursor *int, l int) (time.Time, error) {
 
 	fixTimestampIfNeeded(&ts)
 
-	*cursor += 15
+	p.cursor += 15
 
-	if (*cursor < l) && (buff[*cursor] == ' ') {
-		*cursor++
+	if (p.cursor < p.l) && (p.buff[p.cursor] == ' ') {
+		p.cursor++
 	}
 
 	return ts, nil
 }
 
-func parseHostname(buff []byte, cursor *int, l int) (string, error) {
-	from := *cursor
+func (p *rfc3164Parser) parseHostname() (string, error) {
+	from := p.cursor
 	var to int
 
-	for to = from; to < l; to++ {
-		if buff[to] == ' ' {
+	for to = from; to < p.l; to++ {
+		if p.buff[to] == ' ' {
 			break
 		}
 	}
 
-	hostname := buff[from:to]
+	hostname := p.buff[from:to]
 
-	*cursor = to
+	p.cursor = to
 
 	// XXX : Start for the next parser
-	if *cursor < l {
-		*cursor++
+	if p.cursor < p.l {
+		p.cursor++
 	}
 
 	return string(hostname), nil
 }
 
 // http://tools.ietf.org/html/rfc3164#section-4.1.3
-func parseTag(buff []byte, cursor *int, l int) (string, error) {
+func (p *rfc3164Parser) parseTag() (string, error) {
 	var b byte
 	var endOfTag bool
 	var bracketOpen bool
@@ -158,14 +158,14 @@ func parseTag(buff []byte, cursor *int, l int) (string, error) {
 	var found bool
 	var tooLong bool
 
-	from := *cursor
+	from := p.cursor
 	maxLen := from + 32
 
 	for {
-		b = buff[*cursor]
+		b = p.buff[p.cursor]
 		bracketOpen = (b == '[')
 		endOfTag = (b == ':' || b == ' ')
-		tooLong = (*cursor > maxLen)
+		tooLong = (p.cursor > maxLen)
 
 		if tooLong {
 			return "", ErrTagTooLong
@@ -173,37 +173,37 @@ func parseTag(buff []byte, cursor *int, l int) (string, error) {
 
 		// XXX : parse PID ?
 		if bracketOpen {
-			tag = buff[from:*cursor]
+			tag = p.buff[from:p.cursor]
 			found = true
 		}
 
 		if endOfTag {
 			if !found {
-				tag = buff[from:*cursor]
+				tag = p.buff[from:p.cursor]
 				found = true
 			}
 
-			*cursor++
+			p.cursor++
 			break
 		}
 
-		*cursor++
+		p.cursor++
 	}
 
-	if (*cursor < l) && (buff[*cursor] == ' ') {
-		*cursor++
+	if (p.cursor < p.l) && (p.buff[p.cursor] == ' ') {
+		p.cursor++
 	}
 
 	return string(tag), err
 }
 
-func parseContent(buff []byte, cursor *int, l int) (string, error) {
-	if *cursor > l {
+func (p *rfc3164Parser) parseContent() (string, error) {
+	if p.cursor > p.l {
 		return "", ErrEOL
 	}
 
-	content := bytes.Trim(buff[*cursor:l], " ")
-	*cursor += len(content)
+	content := bytes.Trim(p.buff[p.cursor:p.l], " ")
+	p.cursor += len(content)
 
 	return string(content), ErrEOL
 }
