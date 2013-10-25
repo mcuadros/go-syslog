@@ -10,6 +10,11 @@ type rfc3164Header struct {
 	hostname  string
 }
 
+type rfc3164Message struct {
+	tag     string
+	content string
+}
+
 func parseHeader(buff []byte, cursor *int, l int) (rfc3164Header, error) {
 	hdr := rfc3164Header{}
 	var err error
@@ -28,6 +33,26 @@ func parseHeader(buff []byte, cursor *int, l int) (rfc3164Header, error) {
 	hdr.hostname = hostname
 
 	return hdr, nil
+}
+
+func parseMessage(buff []byte, cursor *int, l int) (rfc3164Message, error) {
+	msg := rfc3164Message{}
+	var err error
+
+	tag, err := parseTag(buff, cursor, l)
+	if err != nil {
+		return msg, err
+	}
+
+	content, err := parseContent(buff, cursor, l)
+	if err != ErrEOL {
+		return msg, err
+	}
+
+	msg.tag = tag
+	msg.content = content
+
+	return msg, err
 }
 
 // https://tools.ietf.org/html/rfc3164#section-4.1.2
@@ -130,6 +155,10 @@ func parseTag(buff []byte, cursor *int, l int) (string, error) {
 			break
 		}
 
+		*cursor++
+	}
+
+	if (*cursor < l) && (buff[*cursor] == ' ') {
 		*cursor++
 	}
 

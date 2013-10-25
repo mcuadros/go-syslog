@@ -31,6 +31,18 @@ func (s *Rfc3164TestSuite) TestParseHeader_InvalidTimestamp(c *C) {
 	assertRfc3164Header(c, hdr, buff, start, 16, ErrTimestampUnknownFormat)
 }
 
+func (s *Rfc3164TestSuite) TestParseMessage_Valid(c *C) {
+	content := "foo bar baz blah quux"
+	buff := []byte("sometag[123]: " + content)
+	start := 0
+	hdr := rfc3164Message{
+		tag:     "sometag",
+		content: content,
+	}
+
+	assertRfc3164Message(c, hdr, buff, start, len(buff), ErrEOL)
+}
+
 func (s *Rfc3164TestSuite) TestParseTimestamp_TooLong(c *C) {
 	// XXX : <15 chars
 	buff := []byte("aaa")
@@ -120,6 +132,14 @@ func (s *Rfc3164TestSuite) TestParseTag_NoPid(c *C) {
 	assertTag(c, tag, buff, start, len(buff), nil)
 }
 
+func (s *Rfc3164TestSuite) TestParseTag_TrailingSpace(c *C) {
+	buff := []byte("apache2: ")
+	start := 0
+	tag := "apache2"
+
+	assertTag(c, tag, buff, start, len(buff), nil)
+}
+
 func (s *Rfc3164TestSuite) TestParseContent_Valid(c *C) {
 	buff := []byte(" foo bar baz quux ")
 	start := 0
@@ -187,6 +207,21 @@ func (s *Rfc3164TestSuite) BenchmarkParseHeader(c *C) {
 	}
 }
 
+func (s *Rfc3164TestSuite) BenchmarkParseMessage(c *C) {
+	buff := []byte("sometag[123]: foo bar baz blah quux")
+
+	var start int
+	l := len(buff)
+
+	for i := 0; i < c.N; i++ {
+		start = 0
+		_, err := parseMessage(buff, &start, l)
+		if err != ErrEOL {
+			panic(err)
+		}
+	}
+}
+
 func assertTimestamp(c *C, ts time.Time, b []byte, s int, expS int, e error) {
 	obtained, err := parseTimestamp(b, &s, len(b))
 	c.Assert(obtained, Equals, ts)
@@ -212,5 +247,12 @@ func assertRfc3164Header(c *C, hdr rfc3164Header, b []byte, s int, expS int, e e
 	obtained, err := parseHeader(b, &s, len(b))
 	c.Assert(err, Equals, e)
 	c.Assert(obtained, Equals, hdr)
+	c.Assert(s, Equals, expS)
+}
+
+func assertRfc3164Message(c *C, msg rfc3164Message, b []byte, s int, expS int, e error) {
+	obtained, err := parseMessage(b, &s, len(b))
+	c.Assert(err, Equals, e)
+	c.Assert(obtained, Equals, msg)
 	c.Assert(s, Equals, expS)
 }
