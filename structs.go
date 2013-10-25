@@ -26,3 +26,5 @@ type rfc3164Message struct {
 	tag     string
 	content string
 }
+
+type logParts map[string]interface{}

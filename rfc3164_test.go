@@ -11,6 +11,36 @@ type Rfc3164TestSuite struct {
 
 var _ = Suite(&Rfc3164TestSuite{})
 
+func (s *Rfc3164TestSuite) TestRfc3164Parser_Valid(c *C) {
+	buff := []byte("Oct 11 22:14:15 mymachine su: 'su root' failed for lonvick on /dev/pts/8")
+	start := 0
+	l := len(buff)
+
+	p := newRfc3164Parser(buff, &start, l)
+	expectedP := &rfc3164Parser{
+		buff:   buff,
+		cursor: &start,
+		l:      l,
+	}
+
+	c.Assert(p, DeepEquals, expectedP)
+
+	err := p.parse()
+	c.Assert(err, IsNil)
+
+	now := time.Now()
+
+	obtained := p.dump()
+	expected := logParts{
+		"timestamp": time.Date(now.Year(), time.October, 11, 22, 14, 15, 0, time.UTC),
+		"hostname":  "mymachine",
+		"tag":       "su",
+		"content":   "'su root' failed for lonvick on /dev/pts/8",
+	}
+
+	c.Assert(obtained, DeepEquals, expected)
+}
+
 func (s *Rfc3164TestSuite) TestParseHeader_Valid(c *C) {
 	buff := []byte("Oct 11 22:14:15 mymachine ")
 	start := 0

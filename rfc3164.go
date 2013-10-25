@@ -5,6 +5,48 @@ import (
 	"time"
 )
 
+type rfc3164Parser struct {
+	buff    []byte
+	cursor  *int
+	l       int
+	header  rfc3164Header
+	message rfc3164Message
+}
+
+func newRfc3164Parser(buff []byte, cursor *int, l int) *rfc3164Parser {
+	return &rfc3164Parser{
+		buff:   buff,
+		cursor: cursor,
+		l:      l,
+	}
+}
+
+func (p *rfc3164Parser) parse() error {
+	hdr, err := parseHeader(p.buff, p.cursor, p.l)
+	if err != nil {
+		return err
+	}
+
+	msg, err := parseMessage(p.buff, p.cursor, p.l)
+	if err != ErrEOL {
+		return err
+	}
+
+	p.header = hdr
+	p.message = msg
+
+	return nil
+}
+
+func (p *rfc3164Parser) dump() logParts {
+	return logParts{
+		"timestamp": p.header.timestamp,
+		"hostname":  p.header.hostname,
+		"tag":       p.message.tag,
+		"content":   p.message.content,
+	}
+}
+
 func parseHeader(buff []byte, cursor *int, l int) (rfc3164Header, error) {
 	hdr := rfc3164Header{}
 	var err error
