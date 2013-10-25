@@ -5,6 +5,7 @@ import (
 )
 
 type priority struct {
+	p int
 	f facility
 	s severity
 }

@@ -91,6 +91,7 @@ func newPriority(p int) priority {
 	// number by 8 and then adding the numerical value of the Severity.
 
 	return priority{
+		p: p,
 		f: facility{value: p / 8},
 		s: severity{value: p % 8},
 	}

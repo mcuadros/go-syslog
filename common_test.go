@@ -73,6 +73,7 @@ func (s *CommonTestSuite) TestNewPriority(c *C) {
 	obtained := newPriority(165)
 
 	expected := priority{
+		p: 165,
 		f: facility{value: 20},
 		s: severity{value: 5},
 	}
