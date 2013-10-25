@@ -53,6 +53,7 @@ func parseHostname(buff []byte, cursor *int, l int) (string, error) {
 	return string(hostname), nil
 }
 
+// http://tools.ietf.org/html/rfc3164#section-4.1.3
 func parseTag(buff []byte, cursor *int, l int) (string, error) {
 	var b byte
 	var endOfTag bool
