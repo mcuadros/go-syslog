@@ -50,7 +50,7 @@ func (s *Rfc3164TestSuite) TestParseHeader_Valid(c *C) {
 		hostname:  "mymachine",
 	}
 
-	assertRfc3164Header(c, hdr, buff, start, len(buff), nil)
+	s.assertRfc3164Header(c, hdr, buff, start, len(buff), nil)
 }
 
 func (s *Rfc3164TestSuite) TestParseHeader_InvalidTimestamp(c *C) {
@@ -58,7 +58,7 @@ func (s *Rfc3164TestSuite) TestParseHeader_InvalidTimestamp(c *C) {
 	start := 0
 	hdr := rfc3164Header{}
 
-	assertRfc3164Header(c, hdr, buff, start, 16, ErrTimestampUnknownFormat)
+	s.assertRfc3164Header(c, hdr, buff, start, 16, ErrTimestampUnknownFormat)
 }
 
 func (s *Rfc3164TestSuite) TestParseMessage_Valid(c *C) {
@@ -70,7 +70,7 @@ func (s *Rfc3164TestSuite) TestParseMessage_Valid(c *C) {
 		content: content,
 	}
 
-	assertRfc3164Message(c, hdr, buff, start, len(buff), ErrEOL)
+	s.assertRfc3164Message(c, hdr, buff, start, len(buff), ErrEOL)
 }
 
 func (s *Rfc3164TestSuite) TestParseTimestamp_TooLong(c *C) {
@@ -79,7 +79,7 @@ func (s *Rfc3164TestSuite) TestParseTimestamp_TooLong(c *C) {
 	start := 0
 	ts := new(time.Time)
 
-	assertTimestamp(c, *ts, buff, start, len(buff), ErrEOL)
+	s.assertTimestamp(c, *ts, buff, start, len(buff), ErrEOL)
 }
 
 func (s *Rfc3164TestSuite) TestParseTimestamp_Invalid(c *C) {
@@ -87,7 +87,7 @@ func (s *Rfc3164TestSuite) TestParseTimestamp_Invalid(c *C) {
 	start := 0
 	ts := new(time.Time)
 
-	assertTimestamp(c, *ts, buff, start, len(buff), ErrTimestampUnknownFormat)
+	s.assertTimestamp(c, *ts, buff, start, len(buff), ErrTimestampUnknownFormat)
 }
 
 func (s *Rfc3164TestSuite) TestParseTimestamp_TrailingSpace(c *C) {
@@ -99,7 +99,7 @@ func (s *Rfc3164TestSuite) TestParseTimestamp_TrailingSpace(c *C) {
 	now := time.Now()
 	ts := time.Date(now.Year(), time.October, 11, 22, 14, 15, 0, time.UTC)
 
-	assertTimestamp(c, ts, buff, start, len(buff), nil)
+	s.assertTimestamp(c, ts, buff, start, len(buff), nil)
 }
 
 func (s *Rfc3164TestSuite) TestParseTimestamp_Valid(c *C) {
@@ -111,7 +111,7 @@ func (s *Rfc3164TestSuite) TestParseTimestamp_Valid(c *C) {
 	now := time.Now()
 	ts := time.Date(now.Year(), time.October, 11, 22, 14, 15, 0, time.UTC)
 
-	assertTimestamp(c, ts, buff, start, len(buff), nil)
+	s.assertTimestamp(c, ts, buff, start, len(buff), nil)
 }
 
 func (s *Rfc3164TestSuite) TestParseHostname_Invalid(c *C) {
@@ -121,7 +121,7 @@ func (s *Rfc3164TestSuite) TestParseHostname_Invalid(c *C) {
 	start := 0
 	hostname := "host"
 
-	assertHostname(c, hostname, buff, start, len("host")+1, nil)
+	s.assertHostname(c, hostname, buff, start, len("host")+1, nil)
 }
 
 func (s *Rfc3164TestSuite) TestParseHostname_Valid(c *C) {
@@ -131,7 +131,7 @@ func (s *Rfc3164TestSuite) TestParseHostname_Valid(c *C) {
 	start := 0
 	hostname := string(buff)
 
-	assertHostname(c, hostname, buff, start, len(buff), nil)
+	s.assertHostname(c, hostname, buff, start, len(buff), nil)
 }
 
 func (s *Rfc3164TestSuite) TestParseTag_TooLong(c *C) {
@@ -143,7 +143,7 @@ func (s *Rfc3164TestSuite) TestParseTag_TooLong(c *C) {
 	start := 0
 	tag := ""
 
-	assertTag(c, tag, buff, start, len(aaa)+1, ErrTagTooLong)
+	s.assertTag(c, tag, buff, start, len(aaa)+1, ErrTagTooLong)
 }
 
 func (s *Rfc3164TestSuite) TestParseTag_Pid(c *C) {
@@ -151,7 +151,7 @@ func (s *Rfc3164TestSuite) TestParseTag_Pid(c *C) {
 	start := 0
 	tag := "apache2"
 
-	assertTag(c, tag, buff, start, len(buff), nil)
+	s.assertTag(c, tag, buff, start, len(buff), nil)
 }
 
 func (s *Rfc3164TestSuite) TestParseTag_NoPid(c *C) {
@@ -159,7 +159,7 @@ func (s *Rfc3164TestSuite) TestParseTag_NoPid(c *C) {
 	start := 0
 	tag := "apache2"
 
-	assertTag(c, tag, buff, start, len(buff), nil)
+	s.assertTag(c, tag, buff, start, len(buff), nil)
 }
 
 func (s *Rfc3164TestSuite) TestParseTag_TrailingSpace(c *C) {
@@ -167,7 +167,7 @@ func (s *Rfc3164TestSuite) TestParseTag_TrailingSpace(c *C) {
 	start := 0
 	tag := "apache2"
 
-	assertTag(c, tag, buff, start, len(buff), nil)
+	s.assertTag(c, tag, buff, start, len(buff), nil)
 }
 
 func (s *Rfc3164TestSuite) TestParseContent_Valid(c *C) {
@@ -264,40 +264,40 @@ func (s *Rfc3164TestSuite) BenchmarkParseMessage(c *C) {
 	}
 }
 
-func assertTimestamp(c *C, ts time.Time, b []byte, s int, expC int, e error) {
-	p := newRfc3164Parser(b, s, len(b))
+func (s *Rfc3164TestSuite) assertTimestamp(c *C, ts time.Time, b []byte, cursor int, expC int, e error) {
+	p := newRfc3164Parser(b, cursor, len(b))
 	obtained, err := p.parseTimestamp()
 	c.Assert(obtained, Equals, ts)
 	c.Assert(p.cursor, Equals, expC)
 	c.Assert(err, Equals, e)
 }
 
-func assertHostname(c *C, h string, b []byte, s int, expC int, e error) {
-	p := newRfc3164Parser(b, s, len(b))
+func (s *Rfc3164TestSuite) assertHostname(c *C, h string, b []byte, cursor int, expC int, e error) {
+	p := newRfc3164Parser(b, cursor, len(b))
 	obtained, err := p.parseHostname()
 	c.Assert(obtained, Equals, h)
 	c.Assert(p.cursor, Equals, expC)
 	c.Assert(err, Equals, e)
 }
 
-func assertTag(c *C, t string, b []byte, s int, expC int, e error) {
-	p := newRfc3164Parser(b, s, len(b))
+func (s *Rfc3164TestSuite) assertTag(c *C, t string, b []byte, cursor int, expC int, e error) {
+	p := newRfc3164Parser(b, cursor, len(b))
 	obtained, err := p.parseTag()
 	c.Assert(obtained, Equals, t)
 	c.Assert(p.cursor, Equals, expC)
 	c.Assert(err, Equals, e)
 }
 
-func assertRfc3164Header(c *C, hdr rfc3164Header, b []byte, s int, expC int, e error) {
-	p := newRfc3164Parser(b, s, len(b))
+func (s *Rfc3164TestSuite) assertRfc3164Header(c *C, hdr rfc3164Header, b []byte, cursor int, expC int, e error) {
+	p := newRfc3164Parser(b, cursor, len(b))
 	obtained, err := p.parseHeader()
 	c.Assert(err, Equals, e)
 	c.Assert(obtained, Equals, hdr)
 	c.Assert(p.cursor, Equals, expC)
 }
 
-func assertRfc3164Message(c *C, msg rfc3164Message, b []byte, s int, expC int, e error) {
-	p := newRfc3164Parser(b, s, len(b))
+func (s *Rfc3164TestSuite) assertRfc3164Message(c *C, msg rfc3164Message, b []byte, cursor int, expC int, e error) {
+	p := newRfc3164Parser(b, cursor, len(b))
 	obtained, err := p.parseMessage()
 	c.Assert(err, Equals, e)
 	c.Assert(obtained, Equals, msg)
