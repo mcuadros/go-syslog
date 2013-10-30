@@ -457,6 +457,23 @@ func (s *Rfc5424TestSuite) TestToNSec(c *C) {
 	}
 }
 
+func (s *Rfc5424TestSuite) TestParseAppName_Valid(c *C) {
+	buff := []byte("su ")
+	start := 0
+	appName := "su"
+
+	s.assertParseAppName(c, appName, buff, start, 2, nil)
+}
+
+func (s *Rfc5424TestSuite) TestParseAppName_TooLong(c *C) {
+	// > 48chars
+	buff := []byte("suuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu ")
+	start := 0
+	appName := ""
+
+	s.assertParseAppName(c, appName, buff, start, 48, ErrInvalidAppName)
+}
+
 // -------------
 
 func (s *Rfc5424TestSuite) assertTimestamp(c *C, ts time.Time, b []byte, cursor int, expC int, e error) {
@@ -530,4 +547,13 @@ func (s *Rfc5424TestSuite) assertParseSecFrac(c *C, secFrac float64, b []byte, c
 	c.Assert(obtained, Equals, secFrac)
 	c.Assert(err, Equals, e)
 	c.Assert(cursor, Equals, expC)
+}
+
+func (s *Rfc5424TestSuite) assertParseAppName(c *C, appName string, b []byte, cursor int, expC int, e error) {
+	p := newRfc5424Parser(b, cursor, len(b))
+	obtained, err := p.parseAppName()
+
+	c.Assert(err, Equals, e)
+	c.Assert(obtained, Equals, appName)
+	c.Assert(p.cursor, Equals, expC)
 }

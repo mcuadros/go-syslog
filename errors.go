@@ -14,6 +14,8 @@ var (
 	ErrTimeZoneInvalid   = &ParserError{"Invalid time zone in timestamp"}
 	ErrInvalidTimeFormat = &ParserError{"Invalid time format"}
 
+	ErrInvalidAppName = &ParserError{"Invalid app name"}
+
 	ErrPriorityNoStart  = &ParserError{"No start char found for priority"}
 	ErrPriorityEmpty    = &ParserError{"Priority field empty"}
 	ErrPriorityNoEnd    = &ParserError{"No end char found for priority"}

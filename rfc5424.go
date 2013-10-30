@@ -60,6 +60,35 @@ func (p *rfc5424Parser) parseHostname() (string, error) {
 	return parseHostname(p.buff, &p.cursor, p.l)
 }
 
+// APP-NAME = NILVALUE / 1*48PRINTUSASCII
+func (p *rfc5424Parser) parseAppName() (string, error) {
+	var to int
+	var found bool
+	var appName string
+
+	maxAppNameLen := 48
+	max := to + maxAppNameLen
+
+	for to = p.cursor; (to < max) && (to < p.l); to++ {
+		if p.buff[to] == ' ' {
+			found = true
+			break
+		}
+	}
+
+	if found {
+		appName = string(p.buff[p.cursor:to])
+	}
+
+	p.cursor = to
+
+	if found {
+		return appName, nil
+	}
+
+	return "", ErrInvalidAppName
+}
+
 // ----------------------------------------------
 // https://tools.ietf.org/html/rfc5424#section-6
 // ----------------------------------------------
