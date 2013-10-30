@@ -19,6 +19,8 @@ func (p *rfc3164Parser) parse() error {
 		return err
 	}
 
+	p.cursor++
+
 	msg, err := p.parseMessage()
 	if err != ErrEOL {
 		return err
@@ -119,25 +121,7 @@ func (p *rfc3164Parser) parseTimestamp() (time.Time, error) {
 }
 
 func (p *rfc3164Parser) parseHostname() (string, error) {
-	from := p.cursor
-	var to int
-
-	for to = from; to < p.l; to++ {
-		if p.buff[to] == ' ' {
-			break
-		}
-	}
-
-	hostname := p.buff[from:to]
-
-	p.cursor = to
-
-	// XXX : Start for the next parser
-	if p.cursor < p.l {
-		p.cursor++
-	}
-
-	return string(hostname), nil
+	return parseHostname(p.buff, &p.cursor, p.l)
 }
 
 // http://tools.ietf.org/html/rfc3164#section-4.1.3

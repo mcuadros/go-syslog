@@ -132,3 +132,20 @@ func parse2Digits(buff []byte, cursor *int, l int, min int, max int, e error) (i
 
 	return 0, e
 }
+
+func parseHostname(buff []byte, cursor *int, l int) (string, error) {
+	from := *cursor
+	var to int
+
+	for to = from; to < l; to++ {
+		if buff[to] == ' ' {
+			break
+		}
+	}
+
+	hostname := buff[from:to]
+
+	*cursor = to
+
+	return string(hostname), nil
+}

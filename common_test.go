@@ -102,6 +102,26 @@ func (s *CommonTestSuite) TestParseVersion_Ok(c *C) {
 	assertVersion(c, 1, buff, start, start+1, nil)
 }
 
+func (s *CommonTestSuite) TestParseHostname_Invalid(c *C) {
+	// XXX : no year specified. Assumed current year
+	// XXX : no timezone specified. Assume UTC
+	buff := []byte("foo name")
+	start := 0
+	hostname := "foo"
+
+	s.assertHostname(c, hostname, buff, start, 3, nil)
+}
+
+func (s *CommonTestSuite) TestParseHostname_Valid(c *C) {
+	// XXX : no year specified. Assumed current year
+	// XXX : no timezone specified. Assume UTC
+	hostname := "ubuntu11.somehost.com"
+	buff := []byte(hostname + " ")
+	start := 0
+
+	s.assertHostname(c, hostname, buff, start, len(hostname), nil)
+}
+
 func (s *CommonTestSuite) BenchmarkParsePriority(c *C) {
 	buff := []byte("<190>")
 	var start int
@@ -141,5 +161,12 @@ func assertVersion(c *C, version int, b []byte, s int, expS int, e error) {
 	obtained, err := parseVersion(b, &s, len(b))
 	c.Assert(obtained, Equals, version)
 	c.Assert(s, Equals, expS)
+	c.Assert(err, Equals, e)
+}
+
+func (s *CommonTestSuite) assertHostname(c *C, h string, b []byte, cursor int, expC int, e error) {
+	obtained, err := parseHostname(b, &cursor, len(b))
+	c.Assert(obtained, Equals, h)
+	c.Assert(cursor, Equals, expC)
 	c.Assert(err, Equals, e)
 }
