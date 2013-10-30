@@ -56,6 +56,10 @@ func (p *rfc5424Parser) parseTimestamp() (time.Time, error) {
 	return ts, nil
 }
 
+func (p *rfc5424Parser) parseHostname() (string, error) {
+	return parseHostname(p.buff, &p.cursor, p.l)
+}
+
 // ----------------------------------------------
 // https://tools.ietf.org/html/rfc5424#section-6
 // ----------------------------------------------
