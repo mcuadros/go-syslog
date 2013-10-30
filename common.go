@@ -96,3 +96,39 @@ func newPriority(p int) priority {
 		s: severity{value: p % 8},
 	}
 }
+
+func findNextSpace(buff []byte, from int, l int) (int, error) {
+	var to int
+
+	for to = from; to < l; to++ {
+		if buff[to] == ' ' {
+			to++
+			return to, nil
+		}
+	}
+
+	return 0, ErrNoSpace
+}
+
+func parse2Digits(buff []byte, cursor *int, l int, min int, max int, e error) (int, error) {
+	digitLen := 2
+
+	if *cursor+digitLen > l {
+		return 0, ErrEOL
+	}
+
+	sub := string(buff[*cursor : *cursor+digitLen])
+
+	*cursor += digitLen
+
+	i, err := strconv.Atoi(sub)
+	if err != nil {
+		return 0, e
+	}
+
+	if i >= min && i <= max {
+		return i, nil
+	}
+
+	return 0, e
+}

@@ -1,7 +1,18 @@
 package syslogparser
 
 var (
-	ErrEOL = &ParserError{"End of log line"}
+	ErrEOL     = &ParserError{"End of log line"}
+	ErrNoSpace = &ParserError{"No space found"}
+
+	ErrYearInvalid       = &ParserError{"Invalid year in timestamp"}
+	ErrMonthInvalid      = &ParserError{"Invalid month in timestamp"}
+	ErrDayInvalid        = &ParserError{"Invalid day in timestamp"}
+	ErrHourInvalid       = &ParserError{"Invalid hour in timestamp"}
+	ErrMinuteInvalid     = &ParserError{"Invalid minute in timestamp"}
+	ErrSecondInvalid     = &ParserError{"Invalid second in timestamp"}
+	ErrSecFracInvalid    = &ParserError{"Invalid fraction of second in timestamp"}
+	ErrTimeZoneInvalid   = &ParserError{"Invalid time zone in timestamp"}
+	ErrInvalidTimeFormat = &ParserError{"Invalid time format"}
 
 	ErrPriorityNoStart  = &ParserError{"No start char found for priority"}
 	ErrPriorityEmpty    = &ParserError{"Priority field empty"}

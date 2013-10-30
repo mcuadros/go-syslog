@@ -18,6 +18,8 @@ type severity struct {
 	value int
 }
 
+// ----
+
 type rfc3164Parser struct {
 	buff    []byte
 	cursor  int
@@ -34,6 +36,32 @@ type rfc3164Header struct {
 type rfc3164Message struct {
 	tag     string
 	content string
+}
+
+// ----
+
+type rfc5424Parser struct {
+	buff   []byte
+	cursor int
+	l      int
+}
+
+type rfc5424PartialTime struct {
+	hour    int
+	minute  int
+	seconds int
+	secFrac float64
+}
+
+type rfc5424FullTime struct {
+	pt  rfc5424PartialTime
+	loc *time.Location
+}
+
+type rfc5424FullDate struct {
+	year  int
+	month int
+	day   int
 }
 
 type logParts map[string]interface{}
