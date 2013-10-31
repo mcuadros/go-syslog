@@ -62,31 +62,12 @@ func (p *rfc5424Parser) parseHostname() (string, error) {
 
 // APP-NAME = NILVALUE / 1*48PRINTUSASCII
 func (p *rfc5424Parser) parseAppName() (string, error) {
-	var to int
-	var found bool
-	var appName string
+	return parseUpToLen(p.buff, &p.cursor, p.l, 48, ErrInvalidAppName)
+}
 
-	maxAppNameLen := 48
-	max := to + maxAppNameLen
-
-	for to = p.cursor; (to < max) && (to < p.l); to++ {
-		if p.buff[to] == ' ' {
-			found = true
-			break
-		}
-	}
-
-	if found {
-		appName = string(p.buff[p.cursor:to])
-	}
-
-	p.cursor = to
-
-	if found {
-		return appName, nil
-	}
-
-	return "", ErrInvalidAppName
+// PROCID = NILVALUE / 1*128PRINTUSASCII
+func (p *rfc5424Parser) parseProcId() (string, error) {
+	return parseUpToLen(p.buff, &p.cursor, p.l, 128, ErrInvalidProcId)
 }
 
 // ----------------------------------------------
