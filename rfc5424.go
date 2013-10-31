@@ -56,6 +56,7 @@ func (p *rfc5424Parser) parseTimestamp() (time.Time, error) {
 	return ts, nil
 }
 
+// HOSTNAME = NILVALUE / 1*255PRINTUSASCII
 func (p *rfc5424Parser) parseHostname() (string, error) {
 	return parseHostname(p.buff, &p.cursor, p.l)
 }
