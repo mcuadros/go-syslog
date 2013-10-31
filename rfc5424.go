@@ -354,3 +354,30 @@ func toNSec(sec float64) (int, error) {
 
 	return fracInt, nil
 }
+
+func parseUpToLen(buff []byte, cursor *int, l int, maxLen int, e error) (string, error) {
+	var to int
+	var found bool
+	var result string
+
+	max := to + maxLen
+
+	for to = *cursor; (to < max) && (to < l); to++ {
+		if buff[to] == ' ' {
+			found = true
+			break
+		}
+	}
+
+	if found {
+		result = string(buff[*cursor:to])
+	}
+
+	*cursor = to
+
+	if found {
+		return result, nil
+	}
+
+	return "", e
+}
