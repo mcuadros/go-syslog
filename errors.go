@@ -17,6 +17,7 @@ var (
 	ErrInvalidAppName = &ParserError{"Invalid app name"}
 
 	ErrInvalidProcId = &ParserError{"Invalid proc ID"}
+	ErrInvalidMsgId  = &ParserError{"Invalid msg ID"}
 
 	ErrPriorityNoStart  = &ParserError{"No start char found for priority"}
 	ErrPriorityEmpty    = &ParserError{"Priority field empty"}

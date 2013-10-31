@@ -70,6 +70,11 @@ func (p *rfc5424Parser) parseProcId() (string, error) {
 	return parseUpToLen(p.buff, &p.cursor, p.l, 128, ErrInvalidProcId)
 }
 
+// MSGID = NILVALUE / 1*32PRINTUSASCII
+func (p *rfc5424Parser) parseMsgId() (string, error) {
+	return parseUpToLen(p.buff, &p.cursor, p.l, 32, ErrInvalidMsgId)
+}
+
 // ----------------------------------------------
 // https://tools.ietf.org/html/rfc5424#section-6
 // ----------------------------------------------

@@ -491,6 +491,23 @@ func (s *Rfc5424TestSuite) TestParseProcId_TooLong(c *C) {
 	s.assertParseProcId(c, procId, buff, start, 128, ErrInvalidProcId)
 }
 
+func (s *Rfc5424TestSuite) TestParseMsgId_Valid(c *C) {
+	buff := []byte("123foo ")
+	start := 0
+	procId := "123foo"
+
+	s.assertParseMsgId(c, procId, buff, start, 6, nil)
+}
+
+func (s *Rfc5424TestSuite) TestParseMsgId_TooLong(c *C) {
+	// > 32chars
+	buff := []byte("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ")
+	start := 0
+	procId := ""
+
+	s.assertParseMsgId(c, procId, buff, start, 32, ErrInvalidMsgId)
+}
+
 // -------------
 
 func (s *Rfc5424TestSuite) assertTimestamp(c *C, ts time.Time, b []byte, cursor int, expC int, e error) {
@@ -581,5 +598,14 @@ func (s *Rfc5424TestSuite) assertParseProcId(c *C, procId string, b []byte, curs
 
 	c.Assert(err, Equals, e)
 	c.Assert(obtained, Equals, procId)
+	c.Assert(p.cursor, Equals, expC)
+}
+
+func (s *Rfc5424TestSuite) assertParseMsgId(c *C, msgId string, b []byte, cursor int, expC int, e error) {
+	p := newRfc5424Parser(b, cursor, len(b))
+	obtained, err := p.parseMsgId()
+
+	c.Assert(err, Equals, e)
+	c.Assert(obtained, Equals, msgId)
 	c.Assert(p.cursor, Equals, expC)
 }
