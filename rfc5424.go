@@ -347,7 +347,7 @@ func parseUpToLen(buff []byte, cursor *int, l int, maxLen int, e error) (string,
 	var found bool
 	var result string
 
-	max := to + maxLen
+	max := *cursor + maxLen
 
 	for to = *cursor; (to < max) && (to < l); to++ {
 		if buff[to] == ' ' {
