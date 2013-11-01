@@ -10,6 +10,10 @@ import (
 	"time"
 )
 
+const (
+	NILVALUE = '-'
+)
+
 func newRfc5424Parser(buff []byte, cursor int, l int) *rfc5424Parser {
 	return &rfc5424Parser{
 		buff:   buff,
@@ -22,6 +26,11 @@ func newRfc5424Parser(buff []byte, cursor int, l int) *rfc5424Parser {
 func (p *rfc5424Parser) parseTimestamp() (time.Time, error) {
 	var ts time.Time
 
+	if p.buff[p.cursor] == NILVALUE {
+		p.cursor++
+		return ts, nil
+	}
+
 	fd, err := parseFullDate(p.buff, &p.cursor, p.l)
 	if err != nil {
 		return ts, err
@@ -30,6 +39,7 @@ func (p *rfc5424Parser) parseTimestamp() (time.Time, error) {
 	if p.buff[p.cursor] != 'T' {
 		return ts, ErrInvalidTimeFormat
 	}
+
 	p.cursor++
 
 	ft, err := parseFullTime(p.buff, &p.cursor, p.l)

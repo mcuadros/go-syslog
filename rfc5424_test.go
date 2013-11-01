@@ -61,6 +61,14 @@ func (s *Rfc5424TestSuite) TestParseTimestamp_NanoSeconds(c *C) {
 	s.assertTimestamp(c, *ts, buff, start, 26, ErrTimestampUnknownFormat)
 }
 
+func (s *Rfc5424TestSuite) TestParseTimestamp_NilValue(c *C) {
+	buff := []byte("-")
+	start := 0
+	ts := new(time.Time)
+
+	s.assertTimestamp(c, *ts, buff, start, 1, nil)
+}
+
 func (s *Rfc5424TestSuite) TestFindNextSpace_NoSpace(c *C) {
 	buff := []byte("aaaaaa")
 	start := 0
