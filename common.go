@@ -1,7 +1,9 @@
 package syslogparser
 
 import (
+	"fmt"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -148,4 +150,10 @@ func parseHostname(buff []byte, cursor *int, l int) (string, error) {
 	*cursor = to
 
 	return string(hostname), nil
+}
+
+func showCursorPos(buff []byte, cursor int) {
+	fmt.Println(string(buff))
+	padding := strings.Repeat("-", cursor)
+	fmt.Println(padding + "↑\n")
 }
