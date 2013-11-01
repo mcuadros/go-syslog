@@ -22,6 +22,54 @@ func newRfc5424Parser(buff []byte, cursor int, l int) *rfc5424Parser {
 	}
 }
 
+// HEADER = PRI VERSION SP TIMESTAMP SP HOSTNAME SP APP-NAME SP PROCID SP MSGID
+// Note : PRI and VERSION are already parsed in common.go
+func (p *rfc5424Parser) parseHeader() (rfc5424Header, error) {
+	hdr := rfc5424Header{}
+
+	ts, err := p.parseTimestamp()
+	if err != nil {
+		return hdr, err
+	}
+
+	hdr.timestamp = ts
+	p.cursor++
+
+	host, err := p.parseHostname()
+	if err != nil {
+		return hdr, err
+	}
+
+	hdr.hostname = host
+	p.cursor++
+
+	appName, err := p.parseAppName()
+	if err != nil {
+		return hdr, err
+	}
+
+	hdr.appName = appName
+	p.cursor++
+
+	procId, err := p.parseProcId()
+	if err != nil {
+		return hdr, nil
+	}
+
+	hdr.procId = procId
+	p.cursor++
+
+	msgId, err := p.parseMsgId()
+	if err != nil {
+		return hdr, nil
+	}
+
+	hdr.msgId = msgId
+	p.cursor++
+
+	return hdr, nil
+}
+
 // https://tools.ietf.org/html/rfc5424#section-6.2.3
 func (p *rfc5424Parser) parseTimestamp() (time.Time, error) {
 	var ts time.Time

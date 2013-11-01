@@ -1,6 +1,7 @@
 package syslogparser
 
 import (
+	"fmt"
 	. "launchpad.net/gocheck"
 	"time"
 )
@@ -9,6 +10,93 @@ type Rfc5424TestSuite struct {
 }
 
 var _ = Suite(&Rfc5424TestSuite{})
+
+func (s *Rfc5424TestSuite) TestParseHeader_Valid(c *C) {
+	ts := time.Date(2003, time.October, 11, 22, 14, 15, 3*10e5, time.UTC)
+	tsString := "2003-10-11T22:14:15.003Z"
+	hostname := "mymachine.example.com"
+	appName := "su"
+	procId := "123"
+	msgId := "ID47"
+	nilValue := string(NILVALUE)
+	headerFmt := "%s %s %s %s %s "
+
+	fixtures := []string{
+		// HEADER complete
+		fmt.Sprintf(headerFmt, tsString, hostname, appName, procId, msgId),
+		// TIMESTAMP as NILVALUE
+		fmt.Sprintf(headerFmt, nilValue, hostname, appName, procId, msgId),
+		// HOSTNAME as NILVALUE
+		fmt.Sprintf(headerFmt, tsString, nilValue, appName, procId, msgId),
+		// APP-NAME as NILVALUE
+		fmt.Sprintf(headerFmt, tsString, hostname, nilValue, procId, msgId),
+		// PROCID as NILVALUE
+		fmt.Sprintf(headerFmt, tsString, hostname, appName, nilValue, msgId),
+		// MSGID as NILVALUE
+		fmt.Sprintf(headerFmt, tsString, hostname, appName, procId, nilValue),
+	}
+
+	expected := []rfc5424Header{
+		// HEADER complete
+		rfc5424Header{
+			timestamp: ts,
+			hostname:  hostname,
+			appName:   appName,
+			procId:    procId,
+			msgId:     msgId,
+		},
+		// TIMESTAMP as NILVALUE
+		rfc5424Header{
+			timestamp: *new(time.Time),
+			hostname:  hostname,
+			appName:   appName,
+			procId:    procId,
+			msgId:     msgId,
+		},
+		// HOSTNAME as NILVALUE
+		rfc5424Header{
+			timestamp: ts,
+			hostname:  nilValue,
+			appName:   appName,
+			procId:    procId,
+			msgId:     msgId,
+		},
+		// APP-NAME as NILVALUE
+		rfc5424Header{
+			timestamp: ts,
+			hostname:  hostname,
+			appName:   nilValue,
+			procId:    procId,
+			msgId:     msgId,
+		},
+		// PROCID as NILVALUE
+		rfc5424Header{
+			timestamp: ts,
+			hostname:  hostname,
+			appName:   appName,
+			procId:    nilValue,
+			msgId:     msgId,
+		},
+		// MSGID as NILVALUE
+		rfc5424Header{
+			timestamp: ts,
+			hostname:  hostname,
+			appName:   appName,
+			procId:    procId,
+			msgId:     nilValue,
+		},
+	}
+
+	for i, f := range fixtures {
+		cursor := 0
+
+		p := newRfc5424Parser([]byte(f), cursor, len(f))
+		obtained, err := p.parseHeader()
+		c.Assert(err, IsNil)
+		c.Assert(obtained, Equals, expected[i])
+		c.Assert(p.cursor, Equals, len(f))
+	}
+}
 
 func (s *Rfc5424TestSuite) TestParseTimestamp_UTC(c *C) {
 	buff := []byte("1985-04-12T23:20:50.52Z")

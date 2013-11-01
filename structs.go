@@ -46,6 +46,14 @@ type rfc5424Parser struct {
 	l      int
 }
 
+type rfc5424Header struct {
+	timestamp time.Time
+	hostname  string
+	appName   string
+	procId    string
+	msgId     string
+}
+
 type rfc5424PartialTime struct {
 	hour    int
 	minute  int
