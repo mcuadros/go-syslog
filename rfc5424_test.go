@@ -622,6 +622,22 @@ func (s *Rfc5424TestSuite) BenchmarkParseTimestamp(c *C) {
 	}
 }
 
+func (s *Rfc5424TestSuite) BenchmarkParseHeader(c *C) {
+	buff := []byte("2003-10-11T22:14:15.003Z mymachine.example.com su 123 ID47")
+	l := len(buff)
+
+	p := newRfc5424Parser(buff, 0, l)
+
+	for i := 0; i < c.N; i++ {
+		_, err := p.parseHeader()
+		if err != nil {
+			panic(err)
+		}
+
+		p.cursor = 0
+	}
+}
+
 // -------------
 
 func (s *Rfc5424TestSuite) assertTimestamp(c *C, ts time.Time, b []byte, cursor int, expC int, e error) {
