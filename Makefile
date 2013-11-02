@@ -1,6 +1,6 @@
 help:
 	@echo "Available targets:"
-	@echo "- test: run tests"
+	@echo "- tests: run tests"
 	@echo "- installdependencies: installs dependencies declared in dependencies.txt"
 	@echo "- clean: cleans directory"
 	@echo "- benchmarks: run benchmarks"
@@ -8,7 +8,7 @@ help:
 installdependencies:
 	cat dependencies.txt | xargs go get
 
-test: installdependencies
+tests: installdependencies
 	go test -i && go test
 
 clean:
