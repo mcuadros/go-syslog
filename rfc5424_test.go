@@ -606,6 +606,24 @@ func (s *Rfc5424TestSuite) TestParseMsgId_TooLong(c *C) {
 
 // -------------
 
+func (s *Rfc5424TestSuite) BenchmarkParseTimestamp(c *C) {
+	buff := []byte("2003-08-24T05:14:15.000003-07:00")
+	l := len(buff)
+
+	p := newRfc5424Parser(buff, 0, l)
+
+	for i := 0; i < c.N; i++ {
+		_, err := p.parseTimestamp()
+		if err != nil {
+			panic(err)
+		}
+
+		p.cursor = 0
+	}
+}
+
+// -------------
+
 func (s *Rfc5424TestSuite) assertTimestamp(c *C, ts time.Time, b []byte, cursor int, expC int, e error) {
 	p := newRfc5424Parser(b, cursor, len(b))
 	obtained, err := p.parseTimestamp()
