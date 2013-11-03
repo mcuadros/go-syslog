@@ -604,13 +604,13 @@ func (s *Rfc5424TestSuite) TestParseMsgId_TooLong(c *C) {
 	s.assertParseMsgId(c, procId, buff, start, 32, ErrInvalidMsgId)
 }
 
-func (s *Rfc5424TestSuite) TestParseStructuredData_NoStructuredData(c *C) {
+func (s *Rfc5424TestSuite) TestParseStructuredData_NilValue(c *C) {
 	// > 32chars
-	buff := []byte("foo")
+	buff := []byte("-")
 	start := 0
 	sdData := ""
 
-	s.assertParseSdName(c, sdData, buff, start, 0, ErrNoStructuredData)
+	s.assertParseSdName(c, sdData, buff, start, 1, nil)
 }
 
 func (s *Rfc5424TestSuite) TestParseStructuredData_SingleStructuredData(c *C) {
