@@ -400,6 +400,46 @@ func toNSec(sec float64) (int, error) {
 	return fracInt, nil
 }
 
+// ------------------------------------------------
+// https://tools.ietf.org/html/rfc5424#section-6.3
+// ------------------------------------------------
+
+func parseStructuredData(buff []byte, cursor *int, l int) (string, error) {
+	var sdData string
+	var found bool
+
+	if buff[*cursor] != '[' {
+		return sdData, ErrNoStructuredData
+	}
+
+	from := *cursor
+	to := from
+
+	for to = from; to < l; to++ {
+		if found {
+			break
+		}
+
+		b := buff[to]
+
+		if b == ']' {
+			switch t := to + 1; {
+			case t == l:
+				found = true
+			case t <= l && buff[t] == ' ':
+				found = true
+			}
+		}
+	}
+
+	if found {
+		*cursor = to
+		return string(buff[from:to]), nil
+	}
+
+	return sdData, ErrNoStructuredData
+}
+
 func parseUpToLen(buff []byte, cursor *int, l int, maxLen int, e error) (string, error) {
 	var to int
 	var found bool

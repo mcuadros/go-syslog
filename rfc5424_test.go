@@ -604,6 +604,40 @@ func (s *Rfc5424TestSuite) TestParseMsgId_TooLong(c *C) {
 	s.assertParseMsgId(c, procId, buff, start, 32, ErrInvalidMsgId)
 }
 
+func (s *Rfc5424TestSuite) TestParseStructuredData_NoStructuredData(c *C) {
+	// > 32chars
+	buff := []byte("foo")
+	start := 0
+	sdData := ""
+
+	s.assertParseSdName(c, sdData, buff, start, 0, ErrNoStructuredData)
+}
+
+func (s *Rfc5424TestSuite) TestParseStructuredData_SingleStructuredData(c *C) {
+	sdData := `[exampleSDID@32473 iut="3" eventSource="Application"eventID="1011"]`
+	buff := []byte(sdData)
+	start := 0
+
+	s.assertParseSdName(c, sdData, buff, start, len(buff), nil)
+}
+
+func (s *Rfc5424TestSuite) TestParseStructuredData_MultipleStructuredData(c *C) {
+	sdData := `[exampleSDID@32473 iut="3" eventSource="Application"eventID="1011"][examplePriority@32473 class="high"]`
+	buff := []byte(sdData)
+	start := 0
+
+	s.assertParseSdName(c, sdData, buff, start, len(buff), nil)
+}
+
+func (s *Rfc5424TestSuite) TestParseStructuredData_MultipleStructuredDataInvalid(c *C) {
+	a := `[exampleSDID@32473 iut="3" eventSource="Application"eventID="1011"]`
+	sdData := a + ` [examplePriority@32473 class="high"]`
+	buff := []byte(sdData)
+	start := 0
+
+	s.assertParseSdName(c, a, buff, start, len(a), nil)
+}
+
 // -------------
 
 func (s *Rfc5424TestSuite) BenchmarkParseTimestamp(c *C) {
@@ -738,4 +772,12 @@ func (s *Rfc5424TestSuite) assertParseMsgId(c *C, msgId string, b []byte, cursor
 	c.Assert(err, Equals, e)
 	c.Assert(obtained, Equals, msgId)
 	c.Assert(p.cursor, Equals, expC)
+}
+
+func (s *Rfc5424TestSuite) assertParseSdName(c *C, sdData string, b []byte, cursor int, expC int, e error) {
+	obtained, err := parseStructuredData(b, &cursor, len(b))
+
+	c.Assert(err, Equals, e)
+	c.Assert(obtained, Equals, sdData)
+	c.Assert(cursor, Equals, expC)
 }
