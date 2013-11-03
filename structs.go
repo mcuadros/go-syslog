@@ -41,9 +41,12 @@ type rfc3164Message struct {
 // ----
 
 type rfc5424Parser struct {
-	buff   []byte
-	cursor int
-	l      int
+	buff           []byte
+	cursor         int
+	l              int
+	header         rfc5424Header
+	structuredData string
+	message        string
 }
 
 type rfc5424Header struct {

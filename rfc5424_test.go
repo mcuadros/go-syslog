@@ -11,6 +11,82 @@ type Rfc5424TestSuite struct {
 
 var _ = Suite(&Rfc5424TestSuite{})
 
+func (s *Rfc5424TestSuite) TestRfc5424Parser_Valid(c *C) {
+	fixtures := []string{
+		// no STRUCTURED-DATA
+		"2003-10-11T22:14:15.003Z mymachine.example.com su - ID47 - 'su root' failed for lonvick on /dev/pts/8",
+		"2003-08-24T05:14:15.000003-07:00 192.0.2.1 myproc 8710 - - %% It's time to make the do-nuts.",
+		// with STRUCTURED-DATA
+		`2003-10-11T22:14:15.003Z mymachine.example.com evntslog - ID47 [exampleSDID@32473 iut="3" eventSource="Application" eventID="1011"] An application event log entry...`,
+
+		// STRUCTURED-DATA Only
+		`2003-10-11T22:14:15.003Z mymachine.example.com evntslog - ID47 [exampleSDID@32473 iut="3" eventSource= "Application" eventID="1011"][examplePriority@32473 class="high"]`,
+	}
+
+	tmpTs, err := time.Parse("-07:00", "-07:00")
+	c.Assert(err, IsNil)
+
+	expected := []logParts{
+		logParts{
+			"timestamp":       time.Date(2003, time.October, 11, 22, 14, 15, 3*10e5, time.UTC),
+			"hostname":        "mymachine.example.com",
+			"app_name":        "su",
+			"proc_id":         "-",
+			"msg_id":          "ID47",
+			"structured_data": "-",
+			"message":         "'su root' failed for lonvick on /dev/pts/8",
+		},
+		logParts{
+			"timestamp":       time.Date(2003, time.August, 24, 5, 14, 15, 3*10e2, tmpTs.Location()),
+			"hostname":        "192.0.2.1",
+			"app_name":        "myproc",
+			"proc_id":         "8710",
+			"msg_id":          "-",
+			"structured_data": "-",
+			"message":         "%% It's time to make the do-nuts.",
+		},
+		logParts{
+			"timestamp":       time.Date(2003, time.October, 11, 22, 14, 15, 3*10e5, time.UTC),
+			"hostname":        "mymachine.example.com",
+			"app_name":        "evntslog",
+			"proc_id":         "-",
+			"msg_id":          "ID47",
+			"structured_data": `[exampleSDID@32473 iut="3" eventSource="Application" eventID="1011"]`,
+			"message":         "An application event log entry...",
+		},
+		logParts{
+			"timestamp":       time.Date(2003, time.October, 11, 22, 14, 15, 3*10e5, time.UTC),
+			"hostname":        "mymachine.example.com",
+			"app_name":        "evntslog",
+			"proc_id":         "-",
+			"msg_id":          "ID47",
+			"structured_data": `[exampleSDID@32473 iut="3" eventSource= "Application" eventID="1011"][examplePriority@32473 class="high"]`,
+			"message":         "",
+		},
+	}
+
+	c.Assert(len(fixtures), Equals, len(expected))
+	start := 0
+	for i, buff := range fixtures {
+		expectedP := &rfc5424Parser{
+			buff:   []byte(buff),
+			cursor: start,
+			l:      len(buff),
+		}
+
+		p := newRfc5424Parser([]byte(buff), start, len(buff))
+		c.Assert(p, DeepEquals, expectedP)
+
+		err := p.parse()
+		c.Assert(err, IsNil)
+
+		obtained := p.dump()
+		for k, v := range obtained {
+			c.Assert(v, DeepEquals, expected[i][k])
+		}
+	}
+}
+
 func (s *Rfc5424TestSuite) TestParseHeader_Valid(c *C) {
 	ts := time.Date(2003, time.October, 11, 22, 14, 15, 3*10e5, time.UTC)
 	tsString := "2003-10-11T22:14:15.003Z"
@@ -608,7 +684,7 @@ func (s *Rfc5424TestSuite) TestParseStructuredData_NilValue(c *C) {
 	// > 32chars
 	buff := []byte("-")
 	start := 0
-	sdData := ""
+	sdData := "-"
 
 	s.assertParseSdName(c, sdData, buff, start, 1, nil)
 }

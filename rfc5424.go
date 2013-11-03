@@ -22,6 +22,41 @@ func newRfc5424Parser(buff []byte, cursor int, l int) *rfc5424Parser {
 	}
 }
 
+func (p *rfc5424Parser) parse() error {
+	hdr, err := p.parseHeader()
+	if err != nil {
+		return err
+	}
+
+	p.header = hdr
+
+	sd, err := p.parseStructuredData()
+	if err != nil {
+		return err
+	}
+
+	p.structuredData = sd
+	p.cursor++
+
+	if p.cursor < p.l {
+		p.message = string(p.buff[p.cursor:])
+	}
+
+	return nil
+}
+
+func (p *rfc5424Parser) dump() logParts {
+	return logParts{
+		"timestamp":       p.header.timestamp,
+		"hostname":        p.header.hostname,
+		"app_name":        p.header.appName,
+		"proc_id":         p.header.procId,
+		"msg_id":          p.header.msgId,
+		"structured_data": p.structuredData,
+		"message":         p.message,
+	}
+}
+
 // HEADER = PRI VERSION SP TIMESTAMP SP HOSTNAME SP APP-NAME SP PROCID SP MSGID
 // Note : PRI and VERSION are already parsed in common.go
 func (p *rfc5424Parser) parseHeader() (rfc5424Header, error) {
@@ -132,6 +167,10 @@ func (p *rfc5424Parser) parseProcId() (string, error) {
 // MSGID = NILVALUE / 1*32PRINTUSASCII
 func (p *rfc5424Parser) parseMsgId() (string, error) {
 	return parseUpToLen(p.buff, &p.cursor, p.l, 32, ErrInvalidMsgId)
+}
+
+func (p *rfc5424Parser) parseStructuredData() (string, error) {
+	return parseStructuredData(p.buff, &p.cursor, p.l)
 }
 
 // ----------------------------------------------
@@ -410,7 +449,7 @@ func parseStructuredData(buff []byte, cursor *int, l int) (string, error) {
 
 	if buff[*cursor] == NILVALUE {
 		*cursor++
-		return sdData, nil
+		return "-", nil
 	}
 
 	if buff[*cursor] != '[' {
