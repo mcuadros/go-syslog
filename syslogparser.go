@@ -193,7 +193,7 @@ func ParseHostname(buff []byte, cursor *int, l int) (string, error) {
 	return string(hostname), nil
 }
 
-func showCursorPos(buff []byte, cursor int) {
+func ShowCursorPos(buff []byte, cursor int) {
 	fmt.Println(string(buff))
 	padding := strings.Repeat("-", cursor)
 	fmt.Println(padding + "↑\n")
