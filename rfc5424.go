@@ -62,7 +62,6 @@ func (p *rfc5424Parser) Dump() LogParts {
 }
 
 // HEADER = PRI VERSION SP TIMESTAMP SP HOSTNAME SP APP-NAME SP PROCID SP MSGID
-// Note : PRI and VERSION are already parsed in common.go
 func (p *rfc5424Parser) parseHeader() (rfc5424Header, error) {
 	hdr := rfc5424Header{}
 
