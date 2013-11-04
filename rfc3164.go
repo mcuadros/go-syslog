@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func newRfc3164Parser(buff []byte, cursor int, l int) *rfc3164Parser {
+func NewRfc3164Parser(buff []byte, cursor int, l int) *rfc3164Parser {
 	return &rfc3164Parser{
 		buff:   buff,
 		cursor: cursor,
@@ -13,7 +13,7 @@ func newRfc3164Parser(buff []byte, cursor int, l int) *rfc3164Parser {
 	}
 }
 
-func (p *rfc3164Parser) parse() error {
+func (p *rfc3164Parser) Parse() error {
 	hdr, err := p.parseHeader()
 	if err != nil {
 		return err
@@ -32,8 +32,8 @@ func (p *rfc3164Parser) parse() error {
 	return nil
 }
 
-func (p *rfc3164Parser) dump() logParts {
-	return logParts{
+func (p *rfc3164Parser) Dump() LogParts {
+	return LogParts{
 		"timestamp": p.header.timestamp,
 		"hostname":  p.header.hostname,
 		"tag":       p.message.tag,

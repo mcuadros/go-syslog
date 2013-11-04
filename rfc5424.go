@@ -14,7 +14,7 @@ const (
 	NILVALUE = '-'
 )
 
-func newRfc5424Parser(buff []byte, cursor int, l int) *rfc5424Parser {
+func NewRfc5424Parser(buff []byte, cursor int, l int) *rfc5424Parser {
 	return &rfc5424Parser{
 		buff:   buff,
 		cursor: cursor,
@@ -22,7 +22,7 @@ func newRfc5424Parser(buff []byte, cursor int, l int) *rfc5424Parser {
 	}
 }
 
-func (p *rfc5424Parser) parse() error {
+func (p *rfc5424Parser) Parse() error {
 	hdr, err := p.parseHeader()
 	if err != nil {
 		return err
@@ -45,8 +45,8 @@ func (p *rfc5424Parser) parse() error {
 	return nil
 }
 
-func (p *rfc5424Parser) dump() logParts {
-	return logParts{
+func (p *rfc5424Parser) Dump() LogParts {
+	return LogParts{
 		"timestamp":       p.header.timestamp,
 		"hostname":        p.header.hostname,
 		"app_name":        p.header.appName,

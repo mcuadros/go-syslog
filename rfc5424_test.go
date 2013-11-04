@@ -26,8 +26,8 @@ func (s *Rfc5424TestSuite) TestRfc5424Parser_Valid(c *C) {
 	tmpTs, err := time.Parse("-07:00", "-07:00")
 	c.Assert(err, IsNil)
 
-	expected := []logParts{
-		logParts{
+	expected := []LogParts{
+		LogParts{
 			"timestamp":       time.Date(2003, time.October, 11, 22, 14, 15, 3*10e5, time.UTC),
 			"hostname":        "mymachine.example.com",
 			"app_name":        "su",
@@ -36,7 +36,7 @@ func (s *Rfc5424TestSuite) TestRfc5424Parser_Valid(c *C) {
 			"structured_data": "-",
 			"message":         "'su root' failed for lonvick on /dev/pts/8",
 		},
-		logParts{
+		LogParts{
 			"timestamp":       time.Date(2003, time.August, 24, 5, 14, 15, 3*10e2, tmpTs.Location()),
 			"hostname":        "192.0.2.1",
 			"app_name":        "myproc",
@@ -45,7 +45,7 @@ func (s *Rfc5424TestSuite) TestRfc5424Parser_Valid(c *C) {
 			"structured_data": "-",
 			"message":         "%% It's time to make the do-nuts.",
 		},
-		logParts{
+		LogParts{
 			"timestamp":       time.Date(2003, time.October, 11, 22, 14, 15, 3*10e5, time.UTC),
 			"hostname":        "mymachine.example.com",
 			"app_name":        "evntslog",
@@ -54,7 +54,7 @@ func (s *Rfc5424TestSuite) TestRfc5424Parser_Valid(c *C) {
 			"structured_data": `[exampleSDID@32473 iut="3" eventSource="Application" eventID="1011"]`,
 			"message":         "An application event log entry...",
 		},
-		logParts{
+		LogParts{
 			"timestamp":       time.Date(2003, time.October, 11, 22, 14, 15, 3*10e5, time.UTC),
 			"hostname":        "mymachine.example.com",
 			"app_name":        "evntslog",
@@ -74,13 +74,13 @@ func (s *Rfc5424TestSuite) TestRfc5424Parser_Valid(c *C) {
 			l:      len(buff),
 		}
 
-		p := newRfc5424Parser([]byte(buff), start, len(buff))
+		p := NewRfc5424Parser([]byte(buff), start, len(buff))
 		c.Assert(p, DeepEquals, expectedP)
 
-		err := p.parse()
+		err := p.Parse()
 		c.Assert(err, IsNil)
 
-		obtained := p.dump()
+		obtained := p.Dump()
 		for k, v := range obtained {
 			c.Assert(v, DeepEquals, expected[i][k])
 		}
@@ -166,7 +166,7 @@ func (s *Rfc5424TestSuite) TestParseHeader_Valid(c *C) {
 	for i, f := range fixtures {
 		cursor := 0
 
-		p := newRfc5424Parser([]byte(f), cursor, len(f))
+		p := NewRfc5424Parser([]byte(f), cursor, len(f))
 		obtained, err := p.parseHeader()
 		c.Assert(err, IsNil)
 		c.Assert(obtained, Equals, expected[i])
@@ -720,7 +720,7 @@ func (s *Rfc5424TestSuite) BenchmarkParseTimestamp(c *C) {
 	buff := []byte("2003-08-24T05:14:15.000003-07:00")
 	l := len(buff)
 
-	p := newRfc5424Parser(buff, 0, l)
+	p := NewRfc5424Parser(buff, 0, l)
 
 	for i := 0; i < c.N; i++ {
 		_, err := p.parseTimestamp()
@@ -736,7 +736,7 @@ func (s *Rfc5424TestSuite) BenchmarkParseHeader(c *C) {
 	buff := []byte("2003-10-11T22:14:15.003Z mymachine.example.com su 123 ID47")
 	l := len(buff)
 
-	p := newRfc5424Parser(buff, 0, l)
+	p := NewRfc5424Parser(buff, 0, l)
 
 	for i := 0; i < c.N; i++ {
 		_, err := p.parseHeader()
@@ -751,7 +751,7 @@ func (s *Rfc5424TestSuite) BenchmarkParseHeader(c *C) {
 // -------------
 
 func (s *Rfc5424TestSuite) assertTimestamp(c *C, ts time.Time, b []byte, cursor int, expC int, e error) {
-	p := newRfc5424Parser(b, cursor, len(b))
+	p := NewRfc5424Parser(b, cursor, len(b))
 	obtained, err := p.parseTimestamp()
 	c.Assert(err, Equals, e)
 
@@ -824,7 +824,7 @@ func (s *Rfc5424TestSuite) assertParseSecFrac(c *C, secFrac float64, b []byte, c
 }
 
 func (s *Rfc5424TestSuite) assertParseAppName(c *C, appName string, b []byte, cursor int, expC int, e error) {
-	p := newRfc5424Parser(b, cursor, len(b))
+	p := NewRfc5424Parser(b, cursor, len(b))
 	obtained, err := p.parseAppName()
 
 	c.Assert(err, Equals, e)
@@ -833,7 +833,7 @@ func (s *Rfc5424TestSuite) assertParseAppName(c *C, appName string, b []byte, cu
 }
 
 func (s *Rfc5424TestSuite) assertParseProcId(c *C, procId string, b []byte, cursor int, expC int, e error) {
-	p := newRfc5424Parser(b, cursor, len(b))
+	p := NewRfc5424Parser(b, cursor, len(b))
 	obtained, err := p.parseProcId()
 
 	c.Assert(err, Equals, e)
@@ -842,7 +842,7 @@ func (s *Rfc5424TestSuite) assertParseProcId(c *C, procId string, b []byte, curs
 }
 
 func (s *Rfc5424TestSuite) assertParseMsgId(c *C, msgId string, b []byte, cursor int, expC int, e error) {
-	p := newRfc5424Parser(b, cursor, len(b))
+	p := NewRfc5424Parser(b, cursor, len(b))
 	obtained, err := p.parseMsgId()
 
 	c.Assert(err, Equals, e)

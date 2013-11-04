@@ -75,4 +75,4 @@ type rfc5424FullDate struct {
 	day   int
 }
 
-type logParts map[string]interface{}
+type LogParts map[string]interface{}
