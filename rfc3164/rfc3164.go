@@ -1,19 +1,44 @@
-package syslogparser
+package rfc3164
 
 import (
 	"bytes"
+	"github.com/jeromer/syslogparser"
 	"time"
 )
 
-func NewRfc3164Parser(buff []byte) *rfc3164Parser {
-	return &rfc3164Parser{
+var (
+	ErrTagTooLong = &syslogparser.ParserError{"Tag name too long"}
+)
+
+type Parser struct {
+	buff     []byte
+	cursor   int
+	l        int
+	priority syslogparser.Priority
+	version  int
+	header   header
+	message  rfc3164message
+}
+
+type header struct {
+	timestamp time.Time
+	hostname  string
+}
+
+type rfc3164message struct {
+	tag     string
+	content string
+}
+
+func NewParser(buff []byte) *Parser {
+	return &Parser{
 		buff:   buff,
 		cursor: 0,
 		l:      len(buff),
 	}
 }
 
-func (p *rfc3164Parser) Parse() error {
+func (p *Parser) Parse() error {
 	pri, err := p.parsePriority()
 	if err != nil {
 		return err
@@ -26,37 +51,37 @@ func (p *rfc3164Parser) Parse() error {
 
 	p.cursor++
 
-	msg, err := p.parseMessage()
-	if err != ErrEOL {
+	msg, err := p.parsemessage()
+	if err != syslogparser.ErrEOL {
 		return err
 	}
 
 	p.priority = pri
-	p.version = NO_VERSION
+	p.version = syslogparser.NO_VERSION
 	p.header = hdr
 	p.message = msg
 
 	return nil
 }
 
-func (p *rfc3164Parser) Dump() LogParts {
-	return LogParts{
+func (p *Parser) Dump() syslogparser.LogParts {
+	return syslogparser.LogParts{
 		"timestamp": p.header.timestamp,
 		"hostname":  p.header.hostname,
 		"tag":       p.message.tag,
 		"content":   p.message.content,
-		"priority":  p.priority.p,
-		"facility":  p.priority.f.value,
-		"severity":  p.priority.s.value,
+		"priority":  p.priority.P,
+		"facility":  p.priority.F.Value,
+		"severity":  p.priority.S.Value,
 	}
 }
 
-func (p *rfc3164Parser) parsePriority() (priority, error) {
-	return parsePriority(p.buff, &p.cursor, p.l)
+func (p *Parser) parsePriority() (syslogparser.Priority, error) {
+	return syslogparser.ParsePriority(p.buff, &p.cursor, p.l)
 }
 
-func (p *rfc3164Parser) parseHeader() (rfc3164Header, error) {
-	hdr := rfc3164Header{}
+func (p *Parser) parseHeader() (header, error) {
+	hdr := header{}
 	var err error
 
 	ts, err := p.parseTimestamp()
@@ -75,8 +100,8 @@ func (p *rfc3164Parser) parseHeader() (rfc3164Header, error) {
 	return hdr, nil
 }
 
-func (p *rfc3164Parser) parseMessage() (rfc3164Message, error) {
-	msg := rfc3164Message{}
+func (p *Parser) parsemessage() (rfc3164message, error) {
+	msg := rfc3164message{}
 	var err error
 
 	tag, err := p.parseTag()
@@ -85,7 +110,7 @@ func (p *rfc3164Parser) parseMessage() (rfc3164Message, error) {
 	}
 
 	content, err := p.parseContent()
-	if err != ErrEOL {
+	if err != syslogparser.ErrEOL {
 		return msg, err
 	}
 
@@ -96,7 +121,7 @@ func (p *rfc3164Parser) parseMessage() (rfc3164Message, error) {
 }
 
 // https://tools.ietf.org/html/rfc3164#section-4.1.2
-func (p *rfc3164Parser) parseTimestamp() (time.Time, error) {
+func (p *Parser) parseTimestamp() (time.Time, error) {
 	var ts time.Time
 	var err error
 
@@ -106,7 +131,7 @@ func (p *rfc3164Parser) parseTimestamp() (time.Time, error) {
 
 	if p.cursor+tsFmtLen > p.l {
 		p.cursor = p.l
-		return ts, ErrEOL
+		return ts, syslogparser.ErrEOL
 	}
 
 	sub := p.buff[p.cursor : tsFmtLen+p.cursor]
@@ -120,7 +145,7 @@ func (p *rfc3164Parser) parseTimestamp() (time.Time, error) {
 			p.cursor++
 		}
 
-		return ts, ErrTimestampUnknownFormat
+		return ts, syslogparser.ErrTimestampUnknownFormat
 	}
 
 	fixTimestampIfNeeded(&ts)
@@ -134,12 +159,12 @@ func (p *rfc3164Parser) parseTimestamp() (time.Time, error) {
 	return ts, nil
 }
 
-func (p *rfc3164Parser) parseHostname() (string, error) {
-	return parseHostname(p.buff, &p.cursor, p.l)
+func (p *Parser) parseHostname() (string, error) {
+	return syslogparser.ParseHostname(p.buff, &p.cursor, p.l)
 }
 
 // http://tools.ietf.org/html/rfc3164#section-4.1.3
-func (p *rfc3164Parser) parseTag() (string, error) {
+func (p *Parser) parseTag() (string, error) {
 	var b byte
 	var endOfTag bool
 	var bracketOpen bool
@@ -187,15 +212,15 @@ func (p *rfc3164Parser) parseTag() (string, error) {
 	return string(tag), err
 }
 
-func (p *rfc3164Parser) parseContent() (string, error) {
+func (p *Parser) parseContent() (string, error) {
 	if p.cursor > p.l {
-		return "", ErrEOL
+		return "", syslogparser.ErrEOL
 	}
 
 	content := bytes.Trim(p.buff[p.cursor:p.l], " ")
 	p.cursor += len(content)
 
-	return string(content), ErrEOL
+	return string(content), syslogparser.ErrEOL
 }
 
 func fixTimestampIfNeeded(ts *time.Time) {

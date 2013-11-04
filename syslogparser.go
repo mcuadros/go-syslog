@@ -13,8 +13,53 @@ const (
 	NO_VERSION = -1
 )
 
+var (
+	ErrEOL     = &ParserError{"End of log line"}
+	ErrNoSpace = &ParserError{"No space found"}
+
+	ErrPriorityNoStart  = &ParserError{"No start char found for priority"}
+	ErrPriorityEmpty    = &ParserError{"Priority field empty"}
+	ErrPriorityNoEnd    = &ParserError{"No end char found for priority"}
+	ErrPriorityTooShort = &ParserError{"Priority field too short"}
+	ErrPriorityTooLong  = &ParserError{"Priority field too long"}
+	ErrPriorityNonDigit = &ParserError{"Non digit found in priority"}
+
+	ErrVersionNotFound = &ParserError{"Can not find version"}
+
+	ErrTimestampUnknownFormat = &ParserError{"Timestamp format unknown"}
+)
+
+type LogParser interface {
+	Parse() error
+	Dump() LogParts
+}
+
+type ParserError struct {
+	ErrorString string
+}
+
+func (err *ParserError) Error() string {
+	return err.ErrorString
+}
+
+type Priority struct {
+	P int
+	F Facility
+	S Severity
+}
+
+type Facility struct {
+	Value int
+}
+
+type Severity struct {
+	Value int
+}
+
+type LogParts map[string]interface{}
+
 // https://tools.ietf.org/html/rfc3164#section-4.1
-func parsePriority(buff []byte, cursor *int, l int) (priority, error) {
+func ParsePriority(buff []byte, cursor *int, l int) (Priority, error) {
 	pri := newPriority(0)
 
 	if l <= 0 {
@@ -44,7 +89,7 @@ func parsePriority(buff []byte, cursor *int, l int) (priority, error) {
 			return newPriority(priDigit), nil
 		}
 
-		if isDigit(c) {
+		if IsDigit(c) {
 			v, e := strconv.Atoi(string(c))
 			if e != nil {
 				return pri, e
@@ -62,7 +107,7 @@ func parsePriority(buff []byte, cursor *int, l int) (priority, error) {
 }
 
 // https://tools.ietf.org/html/rfc5424#section-6.2.2
-func parseVersion(buff []byte, cursor *int, l int) (int, error) {
+func ParseVersion(buff []byte, cursor *int, l int) (int, error) {
 	if *cursor >= l {
 		return NO_VERSION, ErrVersionNotFound
 	}
@@ -71,7 +116,7 @@ func parseVersion(buff []byte, cursor *int, l int) (int, error) {
 	*cursor++
 
 	// XXX : not a version, not an error though as RFC 3164 does not support it
-	if !isDigit(c) {
+	if !IsDigit(c) {
 		return NO_VERSION, nil
 	}
 
@@ -84,22 +129,22 @@ func parseVersion(buff []byte, cursor *int, l int) (int, error) {
 	return v, nil
 }
 
-func isDigit(c byte) bool {
+func IsDigit(c byte) bool {
 	return c >= '0' && c <= '9'
 }
 
-func newPriority(p int) priority {
+func newPriority(p int) Priority {
 	// The Priority value is calculated by first multiplying the Facility
 	// number by 8 and then adding the numerical value of the Severity.
 
-	return priority{
-		p: p,
-		f: facility{value: p / 8},
-		s: severity{value: p % 8},
+	return Priority{
+		P: p,
+		F: Facility{Value: p / 8},
+		S: Severity{Value: p % 8},
 	}
 }
 
-func findNextSpace(buff []byte, from int, l int) (int, error) {
+func FindNextSpace(buff []byte, from int, l int) (int, error) {
 	var to int
 
 	for to = from; to < l; to++ {
@@ -112,7 +157,7 @@ func findNextSpace(buff []byte, from int, l int) (int, error) {
 	return 0, ErrNoSpace
 }
 
-func parse2Digits(buff []byte, cursor *int, l int, min int, max int, e error) (int, error) {
+func Parse2Digits(buff []byte, cursor *int, l int, min int, max int, e error) (int, error) {
 	digitLen := 2
 
 	if *cursor+digitLen > l {
@@ -135,7 +180,7 @@ func parse2Digits(buff []byte, cursor *int, l int, min int, max int, e error) (i
 	return 0, e
 }
 
-func parseHostname(buff []byte, cursor *int, l int) (string, error) {
+func ParseHostname(buff []byte, cursor *int, l int) (string, error) {
 	from := *cursor
 	var to int
 

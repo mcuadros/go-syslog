@@ -1,10 +1,11 @@
 // Note to self : never try to code while looking after your kids
 // The result might look like this : https://pbs.twimg.com/media/BXqSuYXIEAAscVA.png
 
-package syslogparser
+package rfc5424
 
 import (
 	"fmt"
+	"github.com/jeromer/syslogparser"
 	"math"
 	"strconv"
 	"time"
@@ -14,15 +15,68 @@ const (
 	NILVALUE = '-'
 )
 
-func NewRfc5424Parser(buff []byte) *rfc5424Parser {
-	return &rfc5424Parser{
+var (
+	ErrYearInvalid       = &syslogparser.ParserError{"Invalid year in timestamp"}
+	ErrMonthInvalid      = &syslogparser.ParserError{"Invalid month in timestamp"}
+	ErrDayInvalid        = &syslogparser.ParserError{"Invalid day in timestamp"}
+	ErrHourInvalid       = &syslogparser.ParserError{"Invalid hour in timestamp"}
+	ErrMinuteInvalid     = &syslogparser.ParserError{"Invalid minute in timestamp"}
+	ErrSecondInvalid     = &syslogparser.ParserError{"Invalid second in timestamp"}
+	ErrSecFracInvalid    = &syslogparser.ParserError{"Invalid fraction of second in timestamp"}
+	ErrTimeZoneInvalid   = &syslogparser.ParserError{"Invalid time zone in timestamp"}
+	ErrInvalidTimeFormat = &syslogparser.ParserError{"Invalid time format"}
+	ErrInvalidAppName    = &syslogparser.ParserError{"Invalid app name"}
+	ErrInvalidProcId     = &syslogparser.ParserError{"Invalid proc ID"}
+	ErrInvalidMsgId      = &syslogparser.ParserError{"Invalid msg ID"}
+	ErrNoStructuredData  = &syslogparser.ParserError{"No structured data"}
+)
+
+type Parser struct {
+	buff           []byte
+	cursor         int
+	l              int
+	header         header
+	structuredData string
+	message        string
+}
+
+type header struct {
+	priority  syslogparser.Priority
+	version   int
+	timestamp time.Time
+	hostname  string
+	appName   string
+	procId    string
+	msgId     string
+}
+
+type partialTime struct {
+	hour    int
+	minute  int
+	seconds int
+	secFrac float64
+}
+
+type fullTime struct {
+	pt  partialTime
+	loc *time.Location
+}
+
+type fullDate struct {
+	year  int
+	month int
+	day   int
+}
+
+func NewParser(buff []byte) *Parser {
+	return &Parser{
 		buff:   buff,
 		cursor: 0,
 		l:      len(buff),
 	}
 }
 
-func (p *rfc5424Parser) Parse() error {
+func (p *Parser) Parse() error {
 	hdr, err := p.parseHeader()
 	if err != nil {
 		return err
@@ -45,11 +99,11 @@ func (p *rfc5424Parser) Parse() error {
 	return nil
 }
 
-func (p *rfc5424Parser) Dump() LogParts {
-	return LogParts{
-		"priority":        p.header.priority.p,
-		"facility":        p.header.priority.f.value,
-		"severity":        p.header.priority.s.value,
+func (p *Parser) Dump() syslogparser.LogParts {
+	return syslogparser.LogParts{
+		"priority":        p.header.priority.P,
+		"facility":        p.header.priority.F.Value,
+		"severity":        p.header.priority.S.Value,
 		"version":         p.header.version,
 		"timestamp":       p.header.timestamp,
 		"hostname":        p.header.hostname,
@@ -62,8 +116,8 @@ func (p *rfc5424Parser) Dump() LogParts {
 }
 
 // HEADER = PRI VERSION SP TIMESTAMP SP HOSTNAME SP APP-NAME SP PROCID SP MSGID
-func (p *rfc5424Parser) parseHeader() (rfc5424Header, error) {
-	hdr := rfc5424Header{}
+func (p *Parser) parseHeader() (header, error) {
+	hdr := header{}
 
 	pri, err := p.parsePriority()
 	if err != nil {
@@ -122,16 +176,16 @@ func (p *rfc5424Parser) parseHeader() (rfc5424Header, error) {
 	return hdr, nil
 }
 
-func (p *rfc5424Parser) parsePriority() (priority, error) {
-	return parsePriority(p.buff, &p.cursor, p.l)
+func (p *Parser) parsePriority() (syslogparser.Priority, error) {
+	return syslogparser.ParsePriority(p.buff, &p.cursor, p.l)
 }
 
-func (p *rfc5424Parser) parseVersion() (int, error) {
-	return parseVersion(p.buff, &p.cursor, p.l)
+func (p *Parser) parseVersion() (int, error) {
+	return syslogparser.ParseVersion(p.buff, &p.cursor, p.l)
 }
 
 // https://tools.ietf.org/html/rfc5424#section-6.2.3
-func (p *rfc5424Parser) parseTimestamp() (time.Time, error) {
+func (p *Parser) parseTimestamp() (time.Time, error) {
 	var ts time.Time
 
 	if p.buff[p.cursor] == NILVALUE {
@@ -152,7 +206,7 @@ func (p *rfc5424Parser) parseTimestamp() (time.Time, error) {
 
 	ft, err := parseFullTime(p.buff, &p.cursor, p.l)
 	if err != nil {
-		return ts, ErrTimestampUnknownFormat
+		return ts, syslogparser.ErrTimestampUnknownFormat
 	}
 
 	nSec, err := toNSec(ft.pt.secFrac)
@@ -175,26 +229,26 @@ func (p *rfc5424Parser) parseTimestamp() (time.Time, error) {
 }
 
 // HOSTNAME = NILVALUE / 1*255PRINTUSASCII
-func (p *rfc5424Parser) parseHostname() (string, error) {
-	return parseHostname(p.buff, &p.cursor, p.l)
+func (p *Parser) parseHostname() (string, error) {
+	return syslogparser.ParseHostname(p.buff, &p.cursor, p.l)
 }
 
 // APP-NAME = NILVALUE / 1*48PRINTUSASCII
-func (p *rfc5424Parser) parseAppName() (string, error) {
+func (p *Parser) parseAppName() (string, error) {
 	return parseUpToLen(p.buff, &p.cursor, p.l, 48, ErrInvalidAppName)
 }
 
 // PROCID = NILVALUE / 1*128PRINTUSASCII
-func (p *rfc5424Parser) parseProcId() (string, error) {
+func (p *Parser) parseProcId() (string, error) {
 	return parseUpToLen(p.buff, &p.cursor, p.l, 128, ErrInvalidProcId)
 }
 
 // MSGID = NILVALUE / 1*32PRINTUSASCII
-func (p *rfc5424Parser) parseMsgId() (string, error) {
+func (p *Parser) parseMsgId() (string, error) {
 	return parseUpToLen(p.buff, &p.cursor, p.l, 32, ErrInvalidMsgId)
 }
 
-func (p *rfc5424Parser) parseStructuredData() (string, error) {
+func (p *Parser) parseStructuredData() (string, error) {
 	return parseStructuredData(p.buff, &p.cursor, p.l)
 }
 
@@ -202,11 +256,11 @@ func (p *rfc5424Parser) parseStructuredData() (string, error) {
 // https://tools.ietf.org/html/rfc5424#section-6
 // ----------------------------------------------
 
-// XXX : bind them to rfc5424Parser ?
+// XXX : bind them to Parser ?
 
 // FULL-DATE : DATE-FULLYEAR "-" DATE-MONTH "-" DATE-MDAY
-func parseFullDate(buff []byte, cursor *int, l int) (rfc5424FullDate, error) {
-	var fd rfc5424FullDate
+func parseFullDate(buff []byte, cursor *int, l int) (fullDate, error) {
+	var fd fullDate
 
 	year, err := parseYear(buff, cursor, l)
 	if err != nil {
@@ -214,7 +268,7 @@ func parseFullDate(buff []byte, cursor *int, l int) (rfc5424FullDate, error) {
 	}
 
 	if buff[*cursor] != '-' {
-		return fd, ErrTimestampUnknownFormat
+		return fd, syslogparser.ErrTimestampUnknownFormat
 	}
 
 	*cursor++
@@ -225,7 +279,7 @@ func parseFullDate(buff []byte, cursor *int, l int) (rfc5424FullDate, error) {
 	}
 
 	if buff[*cursor] != '-' {
-		return fd, ErrTimestampUnknownFormat
+		return fd, syslogparser.ErrTimestampUnknownFormat
 	}
 
 	*cursor++
@@ -235,7 +289,7 @@ func parseFullDate(buff []byte, cursor *int, l int) (rfc5424FullDate, error) {
 		return fd, err
 	}
 
-	fd = rfc5424FullDate{
+	fd = fullDate{
 		year:  year,
 		month: month,
 		day:   day,
@@ -249,7 +303,7 @@ func parseYear(buff []byte, cursor *int, l int) (int, error) {
 	yearLen := 4
 
 	if *cursor+yearLen > l {
-		return 0, ErrEOL
+		return 0, syslogparser.ErrEOL
 	}
 
 	// XXX : we do not check for a valid year (ie. 1999, 2013 etc)
@@ -268,7 +322,7 @@ func parseYear(buff []byte, cursor *int, l int) (int, error) {
 
 // DATE-MONTH = 2DIGIT  ; 01-12
 func parseMonth(buff []byte, cursor *int, l int) (int, error) {
-	return parse2Digits(buff, cursor, l, 1, 12, ErrMonthInvalid)
+	return syslogparser.Parse2Digits(buff, cursor, l, 1, 12, ErrMonthInvalid)
 }
 
 // DATE-MDAY = 2DIGIT  ; 01-28, 01-29, 01-30, 01-31 based on month/year
@@ -277,13 +331,13 @@ func parseDay(buff []byte, cursor *int, l int) (int, error) {
 	// XXX : we do not check if valid regarding February or leap years
 	// XXX : we only checks that day is in range [01 -> 31]
 	// XXX : in other words this function will not rant if you provide Feb 31th
-	return parse2Digits(buff, cursor, l, 1, 31, ErrDayInvalid)
+	return syslogparser.Parse2Digits(buff, cursor, l, 1, 31, ErrDayInvalid)
 }
 
 // FULL-TIME = PARTIAL-TIME TIME-OFFSET
-func parseFullTime(buff []byte, cursor *int, l int) (rfc5424FullTime, error) {
+func parseFullTime(buff []byte, cursor *int, l int) (fullTime, error) {
 	var loc = new(time.Location)
-	var ft rfc5424FullTime
+	var ft fullTime
 
 	pt, err := parsePartialTime(buff, cursor, l)
 	if err != nil {
@@ -295,7 +349,7 @@ func parseFullTime(buff []byte, cursor *int, l int) (rfc5424FullTime, error) {
 		return ft, err
 	}
 
-	ft = rfc5424FullTime{
+	ft = fullTime{
 		pt:  pt,
 		loc: loc,
 	}
@@ -304,8 +358,8 @@ func parseFullTime(buff []byte, cursor *int, l int) (rfc5424FullTime, error) {
 }
 
 // PARTIAL-TIME = TIME-HOUR ":" TIME-MINUTE ":" TIME-SECOND[TIME-SECFRAC]
-func parsePartialTime(buff []byte, cursor *int, l int) (rfc5424PartialTime, error) {
-	var pt rfc5424PartialTime
+func parsePartialTime(buff []byte, cursor *int, l int) (partialTime, error) {
+	var pt partialTime
 
 	hour, minute, err := getHourMinute(buff, cursor, l)
 	if err != nil {
@@ -325,7 +379,7 @@ func parsePartialTime(buff []byte, cursor *int, l int) (rfc5424PartialTime, erro
 		return pt, err
 	}
 
-	pt = rfc5424PartialTime{
+	pt = partialTime{
 		hour:    hour,
 		minute:  minute,
 		seconds: seconds,
@@ -350,17 +404,17 @@ func parsePartialTime(buff []byte, cursor *int, l int) (rfc5424PartialTime, erro
 
 // TIME-HOUR = 2DIGIT  ; 00-23
 func parseHour(buff []byte, cursor *int, l int) (int, error) {
-	return parse2Digits(buff, cursor, l, 0, 23, ErrHourInvalid)
+	return syslogparser.Parse2Digits(buff, cursor, l, 0, 23, ErrHourInvalid)
 }
 
 // TIME-MINUTE = 2DIGIT  ; 00-59
 func parseMinute(buff []byte, cursor *int, l int) (int, error) {
-	return parse2Digits(buff, cursor, l, 0, 59, ErrMinuteInvalid)
+	return syslogparser.Parse2Digits(buff, cursor, l, 0, 59, ErrMinuteInvalid)
 }
 
 // TIME-SECOND = 2DIGIT  ; 00-59
 func parseSecond(buff []byte, cursor *int, l int) (int, error) {
-	return parse2Digits(buff, cursor, l, 0, 59, ErrSecondInvalid)
+	return syslogparser.Parse2Digits(buff, cursor, l, 0, 59, ErrSecondInvalid)
 }
 
 // TIME-SECFRAC = "." 1*6DIGIT
@@ -377,7 +431,7 @@ func parseSecFrac(buff []byte, cursor *int, l int) (float64, error) {
 		}
 
 		c := buff[to]
-		if !isDigit(c) {
+		if !syslogparser.IsDigit(c) {
 			break
 		}
 	}

@@ -1,3 +1,4 @@
+SUBPACKAGES=. rfc3164 rfc5424
 help:
 	@echo "Available targets:"
 	@echo "- tests: run tests"
@@ -6,13 +7,13 @@ help:
 	@echo "- benchmarks: run benchmarks"
 
 installdependencies:
-	cat dependencies.txt | xargs go get
+	@cat dependencies.txt | xargs go get
 
 tests: installdependencies
-	go test -i && go test
+	@for pkg in $(SUBPACKAGES); do cd $$pkg && go test -i && go test ; cd -;done
 
 clean:
 	find . -type 'f' -name '*.test' -print | xargs rm -f
 
 benchmarks:
-	go test -gocheck.b
+	@for pkg in $(SUBPACKAGES); do cd $$pkg && go test -gocheck.b ; cd -;done

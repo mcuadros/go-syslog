@@ -72,10 +72,10 @@ func (s *CommonTestSuite) TestParsePriority_Ok(c *C) {
 func (s *CommonTestSuite) TestNewPriority(c *C) {
 	obtained := newPriority(165)
 
-	expected := priority{
-		p: 165,
-		f: facility{value: 20},
-		s: severity{value: 5},
+	expected := Priority{
+		P: 165,
+		F: Facility{Value: 20},
+		S: Severity{Value: 5},
 	}
 
 	c.Assert(obtained, DeepEquals, expected)
@@ -129,7 +129,7 @@ func (s *CommonTestSuite) BenchmarkParsePriority(c *C) {
 
 	for i := 0; i < c.N; i++ {
 		start = 0
-		_, err := parsePriority(buff, &start, l)
+		_, err := ParsePriority(buff, &start, l)
 		if err != nil {
 			panic(err)
 		}
@@ -143,29 +143,29 @@ func (s *CommonTestSuite) BenchmarkParseVersion(c *C) {
 
 	for i := 0; i < c.N; i++ {
 		start = 0
-		_, err := parseVersion(buff, &start, l)
+		_, err := ParseVersion(buff, &start, l)
 		if err != nil {
 			panic(err)
 		}
 	}
 }
 
-func (s *CommonTestSuite) assertPriority(c *C, p priority, b []byte, cursor int, expC int, e error) {
-	obtained, err := parsePriority(b, &cursor, len(b))
+func (s *CommonTestSuite) assertPriority(c *C, p Priority, b []byte, cursor int, expC int, e error) {
+	obtained, err := ParsePriority(b, &cursor, len(b))
 	c.Assert(obtained, DeepEquals, p)
 	c.Assert(cursor, Equals, expC)
 	c.Assert(err, Equals, e)
 }
 
 func (s *CommonTestSuite) assertVersion(c *C, version int, b []byte, cursor int, expC int, e error) {
-	obtained, err := parseVersion(b, &cursor, len(b))
+	obtained, err := ParseVersion(b, &cursor, len(b))
 	c.Assert(obtained, Equals, version)
 	c.Assert(cursor, Equals, expC)
 	c.Assert(err, Equals, e)
 }
 
 func (s *CommonTestSuite) assertHostname(c *C, h string, b []byte, cursor int, expC int, e error) {
-	obtained, err := parseHostname(b, &cursor, len(b))
+	obtained, err := ParseHostname(b, &cursor, len(b))
 	c.Assert(obtained, Equals, h)
 	c.Assert(cursor, Equals, expC)
 	c.Assert(err, Equals, e)
