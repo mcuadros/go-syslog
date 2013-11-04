@@ -38,10 +38,6 @@ type ParserError struct {
 	ErrorString string
 }
 
-func (err *ParserError) Error() string {
-	return err.ErrorString
-}
-
 type Priority struct {
 	P int
 	F Facility
@@ -201,4 +197,8 @@ func showCursorPos(buff []byte, cursor int) {
 	fmt.Println(string(buff))
 	padding := strings.Repeat("-", cursor)
 	fmt.Println(padding + "↑\n")
+}
+
+func (err *ParserError) Error() string {
+	return err.ErrorString
 }
