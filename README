@@ -79,3 +79,15 @@ You should see
     hostname : mymachine.example.com
     proc_id : -
     structured_data : [exampleSDID@32473 iut="3" eventSource="Application" eventID="1011"]
+
+
+Running tests
+-------------
+
+make tests
+
+
+Running benchmarks
+------------------
+
+make benchmarks
