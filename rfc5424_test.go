@@ -767,7 +767,7 @@ func (s *Rfc5424TestSuite) BenchmarkParseTimestamp(c *C) {
 }
 
 func (s *Rfc5424TestSuite) BenchmarkParseHeader(c *C) {
-	buff := []byte("2003-10-11T22:14:15.003Z mymachine.example.com su 123 ID47")
+	buff := []byte("<165>1 2003-10-11T22:14:15.003Z mymachine.example.com su 123 ID47")
 	l := len(buff)
 
 	p := NewRfc5424Parser(buff, 0, l)
