@@ -14,11 +14,11 @@ const (
 	NILVALUE = '-'
 )
 
-func NewRfc5424Parser(buff []byte, cursor int, l int) *rfc5424Parser {
+func NewRfc5424Parser(buff []byte) *rfc5424Parser {
 	return &rfc5424Parser{
 		buff:   buff,
-		cursor: cursor,
-		l:      l,
+		cursor: 0,
+		l:      len(buff),
 	}
 }
 

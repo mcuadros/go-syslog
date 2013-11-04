@@ -5,11 +5,11 @@ import (
 	"time"
 )
 
-func NewRfc3164Parser(buff []byte, cursor int, l int) *rfc3164Parser {
+func NewRfc3164Parser(buff []byte) *rfc3164Parser {
 	return &rfc3164Parser{
 		buff:   buff,
-		cursor: cursor,
-		l:      l,
+		cursor: 0,
+		l:      len(buff),
 	}
 }
 
