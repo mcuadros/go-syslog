@@ -21,11 +21,13 @@ type severity struct {
 // ----
 
 type rfc3164Parser struct {
-	buff    []byte
-	cursor  int
-	l       int
-	header  rfc3164Header
-	message rfc3164Message
+	buff     []byte
+	cursor   int
+	l        int
+	priority priority
+	version  int
+	header   rfc3164Header
+	message  rfc3164Message
 }
 
 type rfc3164Header struct {
@@ -50,6 +52,8 @@ type rfc5424Parser struct {
 }
 
 type rfc5424Header struct {
+	priority  priority
+	version   int
 	timestamp time.Time
 	hostname  string
 	appName   string

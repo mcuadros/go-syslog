@@ -47,6 +47,10 @@ func (p *rfc5424Parser) Parse() error {
 
 func (p *rfc5424Parser) Dump() LogParts {
 	return LogParts{
+		"priority":        p.header.priority.p,
+		"facility":        p.header.priority.f.value,
+		"severity":        p.header.priority.s.value,
+		"version":         p.header.version,
 		"timestamp":       p.header.timestamp,
 		"hostname":        p.header.hostname,
 		"app_name":        p.header.appName,
@@ -61,6 +65,20 @@ func (p *rfc5424Parser) Dump() LogParts {
 // Note : PRI and VERSION are already parsed in common.go
 func (p *rfc5424Parser) parseHeader() (rfc5424Header, error) {
 	hdr := rfc5424Header{}
+
+	pri, err := p.parsePriority()
+	if err != nil {
+		return hdr, err
+	}
+
+	hdr.priority = pri
+
+	ver, err := p.parseVersion()
+	if err != nil {
+		return hdr, err
+	}
+	hdr.version = ver
+	p.cursor++
 
 	ts, err := p.parseTimestamp()
 	if err != nil {
@@ -103,6 +121,14 @@ func (p *rfc5424Parser) parseHeader() (rfc5424Header, error) {
 	p.cursor++
 
 	return hdr, nil
+}
+
+func (p *rfc5424Parser) parsePriority() (priority, error) {
+	return parsePriority(p.buff, &p.cursor, p.l)
+}
+
+func (p *rfc5424Parser) parseVersion() (int, error) {
+	return parseVersion(p.buff, &p.cursor, p.l)
 }
 
 // https://tools.ietf.org/html/rfc5424#section-6.2.3

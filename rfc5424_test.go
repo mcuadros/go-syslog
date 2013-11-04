@@ -14,13 +14,13 @@ var _ = Suite(&Rfc5424TestSuite{})
 func (s *Rfc5424TestSuite) TestRfc5424Parser_Valid(c *C) {
 	fixtures := []string{
 		// no STRUCTURED-DATA
-		"2003-10-11T22:14:15.003Z mymachine.example.com su - ID47 - 'su root' failed for lonvick on /dev/pts/8",
-		"2003-08-24T05:14:15.000003-07:00 192.0.2.1 myproc 8710 - - %% It's time to make the do-nuts.",
+		"<34>1 2003-10-11T22:14:15.003Z mymachine.example.com su - ID47 - 'su root' failed for lonvick on /dev/pts/8",
+		"<165>1 2003-08-24T05:14:15.000003-07:00 192.0.2.1 myproc 8710 - - %% It's time to make the do-nuts.",
 		// with STRUCTURED-DATA
-		`2003-10-11T22:14:15.003Z mymachine.example.com evntslog - ID47 [exampleSDID@32473 iut="3" eventSource="Application" eventID="1011"] An application event log entry...`,
+		`<165>1 2003-10-11T22:14:15.003Z mymachine.example.com evntslog - ID47 [exampleSDID@32473 iut="3" eventSource="Application" eventID="1011"] An application event log entry...`,
 
 		// STRUCTURED-DATA Only
-		`2003-10-11T22:14:15.003Z mymachine.example.com evntslog - ID47 [exampleSDID@32473 iut="3" eventSource= "Application" eventID="1011"][examplePriority@32473 class="high"]`,
+		`<165>1 2003-10-11T22:14:15.003Z mymachine.example.com evntslog - ID47 [exampleSDID@32473 iut="3" eventSource= "Application" eventID="1011"][examplePriority@32473 class="high"]`,
 	}
 
 	tmpTs, err := time.Parse("-07:00", "-07:00")
@@ -28,6 +28,10 @@ func (s *Rfc5424TestSuite) TestRfc5424Parser_Valid(c *C) {
 
 	expected := []LogParts{
 		LogParts{
+			"priority":        34,
+			"facility":        4,
+			"severity":        2,
+			"version":         1,
 			"timestamp":       time.Date(2003, time.October, 11, 22, 14, 15, 3*10e5, time.UTC),
 			"hostname":        "mymachine.example.com",
 			"app_name":        "su",
@@ -37,6 +41,10 @@ func (s *Rfc5424TestSuite) TestRfc5424Parser_Valid(c *C) {
 			"message":         "'su root' failed for lonvick on /dev/pts/8",
 		},
 		LogParts{
+			"priority":        165,
+			"facility":        20,
+			"severity":        5,
+			"version":         1,
 			"timestamp":       time.Date(2003, time.August, 24, 5, 14, 15, 3*10e2, tmpTs.Location()),
 			"hostname":        "192.0.2.1",
 			"app_name":        "myproc",
@@ -46,6 +54,10 @@ func (s *Rfc5424TestSuite) TestRfc5424Parser_Valid(c *C) {
 			"message":         "%% It's time to make the do-nuts.",
 		},
 		LogParts{
+			"priority":        165,
+			"facility":        20,
+			"severity":        5,
+			"version":         1,
 			"timestamp":       time.Date(2003, time.October, 11, 22, 14, 15, 3*10e5, time.UTC),
 			"hostname":        "mymachine.example.com",
 			"app_name":        "evntslog",
@@ -55,6 +67,10 @@ func (s *Rfc5424TestSuite) TestRfc5424Parser_Valid(c *C) {
 			"message":         "An application event log entry...",
 		},
 		LogParts{
+			"priority":        165,
+			"facility":        20,
+			"severity":        5,
+			"version":         1,
 			"timestamp":       time.Date(2003, time.October, 11, 22, 14, 15, 3*10e5, time.UTC),
 			"hostname":        "mymachine.example.com",
 			"app_name":        "evntslog",
@@ -95,7 +111,7 @@ func (s *Rfc5424TestSuite) TestParseHeader_Valid(c *C) {
 	procId := "123"
 	msgId := "ID47"
 	nilValue := string(NILVALUE)
-	headerFmt := "%s %s %s %s %s "
+	headerFmt := "<165>1 %s %s %s %s %s "
 
 	fixtures := []string{
 		// HEADER complete
@@ -112,9 +128,17 @@ func (s *Rfc5424TestSuite) TestParseHeader_Valid(c *C) {
 		fmt.Sprintf(headerFmt, tsString, hostname, appName, procId, nilValue),
 	}
 
+	pri := priority{
+		p: 165,
+		f: facility{value: 20},
+		s: severity{value: 5},
+	}
+
 	expected := []rfc5424Header{
 		// HEADER complete
 		rfc5424Header{
+			priority:  pri,
+			version:   1,
 			timestamp: ts,
 			hostname:  hostname,
 			appName:   appName,
@@ -123,6 +147,8 @@ func (s *Rfc5424TestSuite) TestParseHeader_Valid(c *C) {
 		},
 		// TIMESTAMP as NILVALUE
 		rfc5424Header{
+			priority:  pri,
+			version:   1,
 			timestamp: *new(time.Time),
 			hostname:  hostname,
 			appName:   appName,
@@ -131,6 +157,8 @@ func (s *Rfc5424TestSuite) TestParseHeader_Valid(c *C) {
 		},
 		// HOSTNAME as NILVALUE
 		rfc5424Header{
+			priority:  pri,
+			version:   1,
 			timestamp: ts,
 			hostname:  nilValue,
 			appName:   appName,
@@ -139,6 +167,8 @@ func (s *Rfc5424TestSuite) TestParseHeader_Valid(c *C) {
 		},
 		// APP-NAME as NILVALUE
 		rfc5424Header{
+			priority:  pri,
+			version:   1,
 			timestamp: ts,
 			hostname:  hostname,
 			appName:   nilValue,
@@ -147,6 +177,8 @@ func (s *Rfc5424TestSuite) TestParseHeader_Valid(c *C) {
 		},
 		// PROCID as NILVALUE
 		rfc5424Header{
+			priority:  pri,
+			version:   1,
 			timestamp: ts,
 			hostname:  hostname,
 			appName:   appName,
@@ -155,6 +187,8 @@ func (s *Rfc5424TestSuite) TestParseHeader_Valid(c *C) {
 		},
 		// MSGID as NILVALUE
 		rfc5424Header{
+			priority:  pri,
+			version:   1,
 			timestamp: ts,
 			hostname:  hostname,
 			appName:   appName,

@@ -12,7 +12,7 @@ type Rfc3164TestSuite struct {
 var _ = Suite(&Rfc3164TestSuite{})
 
 func (s *Rfc3164TestSuite) TestRfc3164Parser_Valid(c *C) {
-	buff := []byte("Oct 11 22:14:15 mymachine su: 'su root' failed for lonvick on /dev/pts/8")
+	buff := []byte("<34>Oct 11 22:14:15 mymachine su: 'su root' failed for lonvick on /dev/pts/8")
 	start := 0
 	l := len(buff)
 
@@ -36,6 +36,9 @@ func (s *Rfc3164TestSuite) TestRfc3164Parser_Valid(c *C) {
 		"hostname":  "mymachine",
 		"tag":       "su",
 		"content":   "'su root' failed for lonvick on /dev/pts/8",
+		"priority":  34,
+		"facility":  4,
+		"severity":  2,
 	}
 
 	c.Assert(obtained, DeepEquals, expected)

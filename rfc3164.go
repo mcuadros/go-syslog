@@ -14,6 +14,11 @@ func NewRfc3164Parser(buff []byte, cursor int, l int) *rfc3164Parser {
 }
 
 func (p *rfc3164Parser) Parse() error {
+	pri, err := p.parsePriority()
+	if err != nil {
+		return err
+	}
+
 	hdr, err := p.parseHeader()
 	if err != nil {
 		return err
@@ -26,6 +31,8 @@ func (p *rfc3164Parser) Parse() error {
 		return err
 	}
 
+	p.priority = pri
+	p.version = NO_VERSION
 	p.header = hdr
 	p.message = msg
 
@@ -38,7 +45,14 @@ func (p *rfc3164Parser) Dump() LogParts {
 		"hostname":  p.header.hostname,
 		"tag":       p.message.tag,
 		"content":   p.message.content,
+		"priority":  p.priority.p,
+		"facility":  p.priority.f.value,
+		"severity":  p.priority.s.value,
 	}
+}
+
+func (p *rfc3164Parser) parsePriority() (priority, error) {
+	return parsePriority(p.buff, &p.cursor, p.l)
 }
 
 func (p *rfc3164Parser) parseHeader() (rfc3164Header, error) {
@@ -95,7 +109,7 @@ func (p *rfc3164Parser) parseTimestamp() (time.Time, error) {
 		return ts, ErrEOL
 	}
 
-	sub := p.buff[p.cursor:tsFmtLen]
+	sub := p.buff[p.cursor : tsFmtLen+p.cursor]
 	ts, err = time.Parse(tsFmt, string(sub))
 	if err != nil {
 		p.cursor = len(sub)
