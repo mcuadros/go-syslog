@@ -16,7 +16,7 @@ Supported RFCs
 RFC 3164 : https://tools.ietf.org/html/rfc3164
 RFC 5424 : https://tools.ietf.org/html/rfc5424
 
-Not all features described in RFC below are supported but only the most part of
+Not all features described in RFCs above are supported but only the most part of
 it. For exaple SDIDs are not supported in RFC5424 and STRUCTURED-DATA are
 parsed as a whole string.
 
