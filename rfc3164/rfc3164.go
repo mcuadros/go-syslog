@@ -124,20 +124,32 @@ func (p *Parser) parsemessage() (rfc3164message, error) {
 func (p *Parser) parseTimestamp() (time.Time, error) {
 	var ts time.Time
 	var err error
+	var tsFmtLen int
+	var sub []byte
 
-	tsFmt := "Jan 02 15:04:05"
-	// len(fmt)
-	tsFmtLen := 15
-
-	if p.cursor+tsFmtLen > p.l {
-		p.cursor = p.l
-		return ts, syslogparser.ErrEOL
+	tsFmts := []string{
+		"Jan 02 15:04:05",
+		"Jan 2 15:04:05",
 	}
 
-	sub := p.buff[p.cursor : tsFmtLen+p.cursor]
-	ts, err = time.Parse(tsFmt, string(sub))
-	if err != nil {
-		p.cursor = len(sub)
+	found := false
+	for _, tsFmt := range tsFmts {
+		tsFmtLen = len(tsFmt)
+
+		if p.cursor+tsFmtLen > p.l {
+			continue
+		}
+
+		sub = p.buff[p.cursor : tsFmtLen+p.cursor]
+		ts, err = time.Parse(tsFmt, string(sub))
+		if err == nil {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		p.cursor = tsFmtLen
 
 		// XXX : If the timestamp is invalid we try to push the cursor one byte
 		// XXX : further, in case it is a space
@@ -150,7 +162,7 @@ func (p *Parser) parseTimestamp() (time.Time, error) {
 
 	fixTimestampIfNeeded(&ts)
 
-	p.cursor += 15
+	p.cursor += tsFmtLen
 
 	if (p.cursor < p.l) && (p.buff[p.cursor] == ' ') {
 		p.cursor++

@@ -14,7 +14,13 @@ func Test(t *testing.T) { TestingT(t) }
 type Rfc3164TestSuite struct {
 }
 
-var _ = Suite(&Rfc3164TestSuite{})
+var (
+	_ = Suite(&Rfc3164TestSuite{})
+
+	// XXX : corresponds to the length of the last tried timestamp format
+	// XXX : Jan 2 15:04:05
+	lastTriedTimestampLen = 14
+)
 
 func (s *Rfc3164TestSuite) TestParser_Valid(c *C) {
 	buff := []byte("<34>Oct 11 22:14:15 mymachine su: 'su root' failed for lonvick on /dev/pts/8")
@@ -62,7 +68,7 @@ func (s *Rfc3164TestSuite) TestParseHeader_InvalidTimestamp(c *C) {
 	buff := []byte("Oct 34 32:72:82 mymachine ")
 	hdr := header{}
 
-	s.assertRfc3164Header(c, hdr, buff, 16, syslogparser.ErrTimestampUnknownFormat)
+	s.assertRfc3164Header(c, hdr, buff, lastTriedTimestampLen, syslogparser.ErrTimestampUnknownFormat)
 }
 
 func (s *Rfc3164TestSuite) TestParsemessage_Valid(c *C) {
@@ -76,19 +82,11 @@ func (s *Rfc3164TestSuite) TestParsemessage_Valid(c *C) {
 	s.assertRfc3164message(c, hdr, buff, len(buff), syslogparser.ErrEOL)
 }
 
-func (s *Rfc3164TestSuite) TestParseTimestamp_TooLong(c *C) {
-	// XXX : <15 chars
-	buff := []byte("aaa")
-	ts := new(time.Time)
-
-	s.assertTimestamp(c, *ts, buff, len(buff), syslogparser.ErrEOL)
-}
-
 func (s *Rfc3164TestSuite) TestParseTimestamp_Invalid(c *C) {
 	buff := []byte("Oct 34 32:72:82")
 	ts := new(time.Time)
 
-	s.assertTimestamp(c, *ts, buff, len(buff), syslogparser.ErrTimestampUnknownFormat)
+	s.assertTimestamp(c, *ts, buff, lastTriedTimestampLen, syslogparser.ErrTimestampUnknownFormat)
 }
 
 func (s *Rfc3164TestSuite) TestParseTimestamp_TrailingSpace(c *C) {
@@ -98,6 +96,17 @@ func (s *Rfc3164TestSuite) TestParseTimestamp_TrailingSpace(c *C) {
 
 	now := time.Now()
 	ts := time.Date(now.Year(), time.October, 11, 22, 14, 15, 0, time.UTC)
+
+	s.assertTimestamp(c, ts, buff, len(buff), nil)
+}
+
+func (s *Rfc3164TestSuite) TestParseTimestamp_OneDigitForMonths(c *C) {
+	// XXX : no year specified. Assumed current year
+	// XXX : no timezone specified. Assume UTC
+	buff := []byte("Oct 1 22:14:15")
+
+	now := time.Now()
+	ts := time.Date(now.Year(), time.October, 1, 22, 14, 15, 0, time.UTC)
 
 	s.assertTimestamp(c, ts, buff, len(buff), nil)
 }
