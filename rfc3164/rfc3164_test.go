@@ -18,8 +18,8 @@ var (
 	_ = Suite(&Rfc3164TestSuite{})
 
 	// XXX : corresponds to the length of the last tried timestamp format
-	// XXX : Jan 2 15:04:05
-	lastTriedTimestampLen = 14
+	// XXX : Jan  2 15:04:05
+	lastTriedTimestampLen = 15
 )
 
 func (s *Rfc3164TestSuite) TestParser_Valid(c *C) {
@@ -68,7 +68,7 @@ func (s *Rfc3164TestSuite) TestParseHeader_InvalidTimestamp(c *C) {
 	buff := []byte("Oct 34 32:72:82 mymachine ")
 	hdr := header{}
 
-	s.assertRfc3164Header(c, hdr, buff, lastTriedTimestampLen, syslogparser.ErrTimestampUnknownFormat)
+	s.assertRfc3164Header(c, hdr, buff, lastTriedTimestampLen+1, syslogparser.ErrTimestampUnknownFormat)
 }
 
 func (s *Rfc3164TestSuite) TestParsemessage_Valid(c *C) {
@@ -103,7 +103,7 @@ func (s *Rfc3164TestSuite) TestParseTimestamp_TrailingSpace(c *C) {
 func (s *Rfc3164TestSuite) TestParseTimestamp_OneDigitForMonths(c *C) {
 	// XXX : no year specified. Assumed current year
 	// XXX : no timezone specified. Assume UTC
-	buff := []byte("Oct 1 22:14:15")
+	buff := []byte("Oct  1 22:14:15")
 
 	now := time.Now()
 	ts := time.Date(now.Year(), time.October, 1, 22, 14, 15, 0, time.UTC)
