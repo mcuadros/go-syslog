@@ -22,6 +22,7 @@ const (
 
 type Server struct {
 	scanners    []*bufio.Scanner
+	listeners   []*net.TCPListener
 	connections []net.Conn
 	wait        sync.WaitGroup
 	format      Format
@@ -58,6 +59,21 @@ func (self *Server) ListenUDP(addr string) error {
 	return nil
 }
 
+func (self *Server) ListenTCP(addr string) error {
+	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
+	if err != nil {
+		return err
+	}
+
+	listener, err := net.ListenTCP("tcp", tcpAddr)
+	if err != nil {
+		return err
+	}
+
+	self.listeners = append(self.listeners, listener)
+	return nil
+}
+
 func (self *Server) Boot() error {
 	if self.format == 0 {
 		return errors.New("please set a valid format")
@@ -67,19 +83,39 @@ func (self *Server) Boot() error {
 		return errors.New("please set a valid handler")
 	}
 
-	for _, connection := range self.connections {
-		scanner := self.createScannerFromConnection(connection)
-		self.scanners = append(self.scanners, scanner)
+	for _, listerner := range self.listeners {
+		self.goAcceptConnection(listerner)
+	}
 
-		self.wait.Add(1)
-		go self.scan(scanner)
+	for _, connection := range self.connections {
+		self.goScanConnection(connection)
 	}
 
 	return nil
 }
 
-func (self *Server) createScannerFromConnection(connection net.Conn) *bufio.Scanner {
-	return bufio.NewScanner(connection)
+func (self *Server) goAcceptConnection(listerner *net.TCPListener) {
+	self.wait.Add(1)
+	go func(listerner *net.TCPListener) {
+		for {
+			connection, err := listerner.Accept()
+			if err != nil {
+				continue
+			}
+
+			self.goScanConnection(connection)
+		}
+
+		self.wait.Done()
+	}(listerner)
+}
+
+func (self *Server) goScanConnection(connection net.Conn) {
+	scanner := bufio.NewScanner(connection)
+	self.scanners = append(self.scanners, scanner)
+
+	self.wait.Add(1)
+	go self.scan(scanner)
 }
 
 func (self *Server) scan(scanner *bufio.Scanner) {
