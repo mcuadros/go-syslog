@@ -19,10 +19,9 @@ How import the package
 
 ```go
 import "github.com/mcuadros/go-syslog"
-
 ```
 
-Build a basic syslog server:    
+Example of a basic syslog [upd server](example/basic_udp.go):    
 
 ```go
 var channel syslog.LogPartsChannel
@@ -41,7 +40,6 @@ go func(channel syslog.LogPartsChannel) {
 }(channel)
 
 server.Wait()
-
 ```
 
 License
