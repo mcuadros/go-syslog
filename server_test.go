@@ -8,6 +8,7 @@ import (
 )
 
 import . "launchpad.net/gocheck"
+import "github.com/jeromer/syslogparser"
 
 func Test(t *testing.T) { TestingT(t) }
 
@@ -24,9 +25,19 @@ func (s *ServerSuite) TestTailFile(c *C) {
 	}()
 
 	server := NewServer()
-	err := server.ListenUDP("localhost:5142")
+	server.SetFormat(RFC3164_NO_STRICT)
+	server.SetHandler(new(HandlerMock))
+
+	err := server.ListenUDP("0.0.0.0:514")
 	fmt.Println(err)
 
 	server.Boot()
 	server.Wait()
+}
+
+type HandlerMock struct {
+}
+
+func (self *HandlerMock) Handle(logParts syslogparser.LogParts) {
+	fmt.Println(logParts)
 }
