@@ -59,6 +59,21 @@ func (self *Server) ListenUDP(addr string) error {
 	return nil
 }
 
+func (self *Server) ListenUnixgram(addr string) error {
+	unixAddr, err := net.ResolveUnixAddr("unixgram", addr)
+	if err != nil {
+		return err
+	}
+
+	connection, err := net.ListenUnixgram("unixgram", unixAddr)
+	if err != nil {
+		return err
+	}
+
+	self.connections = append(self.connections, connection)
+	return nil
+}
+
 func (self *Server) ListenTCP(addr string) error {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
 	if err != nil {
