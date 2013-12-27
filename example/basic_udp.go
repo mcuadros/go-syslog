@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-import "github.com/mcuadros/go-syslog"
+import ".."
 
 func main() {
 	var channel syslog.LogPartsChannel
@@ -14,6 +14,8 @@ func main() {
 	server.SetFormat(syslog.RFC3164_NO_STRICT)
 	server.SetHandler(handler)
 	server.ListenUDP("0.0.0.0:514")
+	server.ListenTCP("0.0.0.0:514")
+
 	server.Boot()
 
 	go func(channel syslog.LogPartsChannel) {
