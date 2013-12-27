@@ -1,7 +1,6 @@
 package syslog
 
 import (
-	"fmt"
 	"net"
 	"testing"
 	"time"
@@ -12,32 +11,42 @@ import "github.com/jeromer/syslogparser"
 
 func Test(t *testing.T) { TestingT(t) }
 
-type ServerSuite struct{}
+type ServerSuite struct {
+}
 
 var _ = Suite(&ServerSuite{})
+var exampleSyslog = "<31>Dec 26 05:08:46 hostname tag[296]: content"
 
 func (s *ServerSuite) TestTailFile(c *C) {
-	go func() {
-		time.Sleep(100 * time.Microsecond)
-		serverAddr, _ := net.ResolveUDPAddr("udp", "localhost:5142")
-		con, _ := net.DialUDP("udp", nil, serverAddr)
-		con.Write([]byte("foo\n"))
-	}()
-
+	handler := new(HandlerMock)
 	server := NewServer()
 	server.SetFormat(RFC3164_NO_STRICT)
-	server.SetHandler(new(HandlerMock))
+	server.SetHandler(handler)
+	server.ListenUDP("0.0.0.0:5141")
 
-	err := server.ListenUDP("0.0.0.0:514")
-	fmt.Println(err)
+	go func(server *Server) {
+		time.Sleep(100 * time.Microsecond)
+
+		serverAddr, _ := net.ResolveUDPAddr("udp", "localhost:5141")
+		con, _ := net.DialUDP("udp", nil, serverAddr)
+		con.Write([]byte(exampleSyslog))
+		time.Sleep(100 * time.Microsecond)
+
+		server.Kill()
+	}(server)
 
 	server.Boot()
 	server.Wait()
+
+	c.Check(handler.LastLogParts["hostname"], Equals, "hostname")
+	c.Check(handler.LastLogParts["tag"], Equals, "tag")
+	c.Check(handler.LastLogParts["content"], Equals, "content")
 }
 
 type HandlerMock struct {
+	LastLogParts syslogparser.LogParts
 }
 
 func (self *HandlerMock) Handle(logParts syslogparser.LogParts) {
-	fmt.Println(logParts)
+	self.LastLogParts = logParts
 }

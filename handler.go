@@ -1,9 +1,5 @@
 package syslog
 
-import (
-	"fmt"
-)
-
 import "github.com/jeromer/syslogparser"
 
 //The handler receive every syslog entry at Handle method
@@ -33,6 +29,5 @@ func (self *ChannelHandler) SetChannel(channel LogPartsChannel) {
 
 //Syslog entry receiver
 func (self *ChannelHandler) Handle(logParts syslogparser.LogParts) {
-	fmt.Println(logParts)
 	self.channel <- logParts
 }

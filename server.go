@@ -3,7 +3,6 @@ package syslog
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"net"
 	"sync"
 )
@@ -145,10 +144,6 @@ func (self *Server) scan(scanner *bufio.Scanner) {
 		self.parser([]byte(scanner.Text()))
 	}
 
-	if err := scanner.Err(); err != nil {
-		fmt.Println("reading standard input:", err)
-	}
-
 	self.wait.Done()
 }
 
@@ -187,6 +182,25 @@ func (self *Server) getParserRFC5424(line []byte) *rfc5424.Parser {
 //Returns the last error
 func (self *Server) GetLastError() error {
 	return self.lastError
+}
+
+//Kill the server
+func (self *Server) Kill() error {
+	for _, connection := range self.connections {
+		err := connection.Close()
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, listener := range self.listeners {
+		err := listener.Close()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 //Waits until the server stops
