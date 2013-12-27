@@ -6,10 +6,6 @@ import (
 	"time"
 )
 
-var (
-	ErrTagTooLong = &syslogparser.ParserError{"Tag name too long"}
-)
-
 type Parser struct {
 	buff     []byte
 	cursor   int
@@ -183,20 +179,13 @@ func (p *Parser) parseTag() (string, error) {
 	var tag []byte
 	var err error
 	var found bool
-	var tooLong bool
 
 	from := p.cursor
-	maxLen := from + 32
 
 	for {
 		b = p.buff[p.cursor]
 		bracketOpen = (b == '[')
 		endOfTag = (b == ':' || b == ' ')
-		tooLong = (p.cursor > maxLen)
-
-		if tooLong {
-			return "", ErrTagTooLong
-		}
 
 		// XXX : parse PID ?
 		if bracketOpen {

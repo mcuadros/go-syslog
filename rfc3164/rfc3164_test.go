@@ -23,7 +23,7 @@ var (
 )
 
 func (s *Rfc3164TestSuite) TestParser_Valid(c *C) {
-	buff := []byte("<34>Oct 11 22:14:15 mymachine su: 'su root' failed for lonvick on /dev/pts/8")
+	buff := []byte("<34>Oct 11 22:14:15 mymachine very.large.syslog.message.tag: 'su root' failed for lonvick on /dev/pts/8")
 
 	p := NewParser(buff)
 	expectedP := &Parser{
@@ -43,7 +43,7 @@ func (s *Rfc3164TestSuite) TestParser_Valid(c *C) {
 	expected := syslogparser.LogParts{
 		"timestamp": time.Date(now.Year(), time.October, 11, 22, 14, 15, 0, time.UTC),
 		"hostname":  "mymachine",
-		"tag":       "su",
+		"tag":       "very.large.syslog.message.tag",
 		"content":   "'su root' failed for lonvick on /dev/pts/8",
 		"priority":  34,
 		"facility":  4,
@@ -120,17 +120,6 @@ func (s *Rfc3164TestSuite) TestParseTimestamp_Valid(c *C) {
 	ts := time.Date(now.Year(), time.October, 11, 22, 14, 15, 0, time.UTC)
 
 	s.assertTimestamp(c, ts, buff, len(buff), nil)
-}
-
-func (s *Rfc3164TestSuite) TestParseTag_TooLong(c *C) {
-	// The TAG is a string of ABNF alphanumeric characters that MUST NOT exceed 32 characters.
-	// Source : http://tools.ietf.org/html/rfc3164#section-4.1.3
-
-	aaa := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-	buff := []byte(aaa + "[10]:")
-	tag := ""
-
-	s.assertTag(c, tag, buff, len(aaa)+1, ErrTagTooLong)
 }
 
 func (s *Rfc3164TestSuite) TestParseTag_Pid(c *C) {
