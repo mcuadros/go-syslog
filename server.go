@@ -15,7 +15,6 @@ type Format int
 
 const (
 	RFC3164           Format = 1 + iota // RFC3164: http://www.ietf.org/rfc/rfc3164.txt
-	RFC3164_NO_STRICT                   // RFC3164: but allows tags longer than 32 chars
 	RFC5423                             // RFC5423: http://www.ietf.org/rfc/rfc5424.txt
 )
 
@@ -152,9 +151,7 @@ func (self *Server) parser(line []byte) {
 
 	switch self.format {
 	case RFC3164:
-		parser = self.getParserRFC3164(line, true)
-	case RFC3164_NO_STRICT:
-		parser = self.getParserRFC3164(line, false)
+		parser = self.getParserRFC3164(line)
 	case RFC5423:
 		parser = self.getParserRFC5424(line)
 	}
@@ -166,9 +163,8 @@ func (self *Server) parser(line []byte) {
 	go self.handler.Handle(parser.Dump())
 }
 
-func (self *Server) getParserRFC3164(line []byte, strict bool) *rfc3164.Parser {
+func (self *Server) getParserRFC3164(line []byte) *rfc3164.Parser {
 	parser := rfc3164.NewParser(line)
-	parser.SetStrict(strict)
 
 	return parser
 }
