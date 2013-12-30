@@ -20,7 +20,7 @@ var exampleSyslog = "<31>Dec 26 05:08:46 hostname tag[296]: content"
 func (s *ServerSuite) TestTailFile(c *C) {
 	handler := new(HandlerMock)
 	server := NewServer()
-	server.SetFormat(RFC3164_NO_STRICT)
+	server.SetFormat(RFC3164)
 	server.SetHandler(handler)
 	server.ListenUDP("0.0.0.0:5141")
 
