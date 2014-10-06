@@ -11,7 +11,7 @@ func main() {
 	handler := syslog.NewChannelHandler(channel)
 
 	server := syslog.NewServer()
-	server.SetFormat(syslog.RFC3164_NO_STRICT)
+	server.SetFormat(syslog.RFC5424)
 	server.SetHandler(handler)
 	server.ListenUDP("0.0.0.0:514")
 	server.ListenTCP("0.0.0.0:514")

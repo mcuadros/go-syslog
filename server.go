@@ -14,12 +14,11 @@ import "github.com/jeromer/syslogparser/rfc5424"
 type Format int
 
 const (
-	RFC3164           Format = 1 + iota // RFC3164: http://www.ietf.org/rfc/rfc3164.txt
-	RFC5423                             // RFC5423: http://www.ietf.org/rfc/rfc5424.txt
+	RFC3164 Format = 1 + iota // RFC3164: http://www.ietf.org/rfc/rfc3164.txt
+	RFC5424                   // RFC5424: http://www.ietf.org/rfc/rfc5424.txt
 )
 
 type Server struct {
-	scanners    []*bufio.Scanner
 	listeners   []*net.TCPListener
 	connections []net.Conn
 	wait        sync.WaitGroup
@@ -35,7 +34,7 @@ func NewServer() *Server {
 	return server
 }
 
-//Sets the syslog format (RFC3164 or RFC5423)
+//Sets the syslog format (RFC3164 or RFC5424)
 func (self *Server) SetFormat(format Format) {
 	self.format = format
 }
@@ -103,44 +102,63 @@ func (self *Server) Boot() error {
 		return errors.New("please set a valid handler")
 	}
 
-	for _, listerner := range self.listeners {
-		self.goAcceptConnection(listerner)
+	for _, listener := range self.listeners {
+		self.goAcceptConnection(listener)
 	}
 
 	for _, connection := range self.connections {
-		self.goScanConnection(connection)
+		self.goScanConnection(connection, false)
 	}
 
 	return nil
 }
 
-func (self *Server) goAcceptConnection(listerner *net.TCPListener) {
+func (self *Server) goAcceptConnection(listener *net.TCPListener) {
 	self.wait.Add(1)
-	go func(listerner *net.TCPListener) {
+	go func(listener *net.TCPListener) {
 		for {
-			connection, err := listerner.Accept()
+			connection, err := listener.Accept()
 			if err != nil {
 				continue
 			}
 
-			self.goScanConnection(connection)
+			self.goScanConnection(connection, true)
 		}
 
 		self.wait.Done()
-	}(listerner)
+	}(listener)
 }
 
-func (self *Server) goScanConnection(connection net.Conn) {
+type Closer interface {
+	Close() error
+}
+
+type ScanCloser struct {
+	*bufio.Scanner
+	closer Closer
+}
+
+func (self *Server) goScanConnection(connection net.Conn, needClose bool) {
 	scanner := bufio.NewScanner(connection)
-	self.scanners = append(self.scanners, scanner)
+
+	var scanCloser *ScanCloser
+	if needClose {
+		scanCloser = &ScanCloser{scanner, connection}
+	} else {
+		scanCloser = &ScanCloser{scanner, nil}
+	}
 
 	self.wait.Add(1)
-	go self.scan(scanner)
+	go self.scan(scanCloser)
 }
 
-func (self *Server) scan(scanner *bufio.Scanner) {
-	for scanner.Scan() {
-		self.parser([]byte(scanner.Text()))
+func (self *Server) scan(scanCloser *ScanCloser) {
+	for scanCloser.Scan() {
+		self.parser([]byte(scanCloser.Text()))
+	}
+
+	if scanCloser.closer != nil {
+		scanCloser.closer.Close()
 	}
 
 	self.wait.Done()
@@ -152,7 +170,7 @@ func (self *Server) parser(line []byte) {
 	switch self.format {
 	case RFC3164:
 		parser = self.getParserRFC3164(line)
-	case RFC5423:
+	case RFC5424:
 		parser = self.getParserRFC5424(line)
 	}
 
