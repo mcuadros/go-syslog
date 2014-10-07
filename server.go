@@ -23,6 +23,7 @@ type Server struct {
 	listeners   []*net.TCPListener
 	connections []net.Conn
 	wait        sync.WaitGroup
+	doneTcp		chan bool
 	format      Format
 	handler     Handler
 	lastError   error
@@ -89,6 +90,7 @@ func (self *Server) ListenTCP(addr string) error {
 		return err
 	}
 
+	self.doneTcp = make(chan bool)
 	self.listeners = append(self.listeners, listener)
 	return nil
 }
@@ -117,7 +119,13 @@ func (self *Server) Boot() error {
 func (self *Server) goAcceptConnection(listerner *net.TCPListener) {
 	self.wait.Add(1)
 	go func(listerner *net.TCPListener) {
+		loop:
 		for {
+			select {
+			case <-self.doneTcp:
+				break loop
+			default:
+			}
 			connection, err := listerner.Accept()
 			if err != nil {
 				continue
@@ -194,6 +202,7 @@ func (self *Server) Kill() error {
 		if err != nil {
 			return err
 		}
+		close(self.doneTcp)
 	}
 
 	return nil
