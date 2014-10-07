@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-)
 
-import ".."
+	"github.com/mcuadros/go-syslog"
+)
 
 func main() {
 	var channel syslog.LogPartsChannel
