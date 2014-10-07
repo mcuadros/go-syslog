@@ -23,6 +23,7 @@ func (s *ServerSuite) TestTailFile(c *C) {
 	server.SetFormat(RFC3164)
 	server.SetHandler(handler)
 	server.ListenUDP("0.0.0.0:5141")
+	server.ListenTCP("0.0.0.0:5141")
 
 	go func(server *Server) {
 		time.Sleep(100 * time.Microsecond)
