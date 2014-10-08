@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
+
+	"github.com/mcuadros/go-syslog"
 )
 
-import ".."
-
 func main() {
-	var channel syslog.LogPartsChannel
+	channel := make(syslog.LogPartsChannel)
 	handler := syslog.NewChannelHandler(channel)
 
 	server := syslog.NewServer()

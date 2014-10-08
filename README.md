@@ -1,4 +1,4 @@
-go-syslog [![Build Status](https://travis-ci.org/mcuadros/go-syslog.png?branch=master)](https://travis-ci.org/mcuadros/go-syslog) [![GoDoc](https://godoc.org/github.com/mcuadros/go-syslog?status.png)](http://godoc.org/github.com/mcuadros/go-syslog)
+go-syslog [![Build Status](https://travis-ci.org/mcuadros/go-syslog.png?branch=master)](https://travis-ci.org/mcuadros/go-syslog) [![GoDoc](http://godoc.org/github.com/mcuadros/go-syslog?status.png)](http://godoc.org/github.com/mcuadros/go-syslog)
 ==============================
 
 Syslog server library for go, build easy your custom syslog server over UDP, TCP or Unix sockets using RFC3164 or RFC5424
@@ -24,7 +24,7 @@ import "github.com/mcuadros/go-syslog"
 Example of a basic syslog [upd server](example/basic_udp.go):    
 
 ```go
-var channel syslog.LogPartsChannel
+channel := make(syslog.LogPartsChannel)
 handler := syslog.NewChannelHandler(channel)
 
 server := syslog.NewServer()
