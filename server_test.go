@@ -7,7 +7,10 @@ import (
 )
 
 import . "launchpad.net/gocheck"
-import "github.com/jeromer/syslogparser"
+import (
+	"github.com/jeromer/syslogparser"
+	"io"
+)
 
 func Test(t *testing.T) { TestingT(t) }
 
@@ -50,4 +53,62 @@ type HandlerMock struct {
 
 func (self *HandlerMock) Handle(logParts syslogparser.LogParts) {
 	self.LastLogParts = logParts
+}
+
+type ConnMock struct {
+	ReadData []byte
+	isClosed bool
+}
+
+func (c *ConnMock) Read(b []byte) (n int, err error) {
+	if c.ReadData != nil {
+		//b := make([]byte, len(c.readData))
+		l := copy(b, c.ReadData)
+		c.ReadData = nil
+		return l, nil
+	}
+	return 0, io.EOF
+}
+
+func (c *ConnMock) Write(b []byte) (n int, err error) {
+	return 0, nil
+}
+
+func (c *ConnMock) Close() error {
+	c.isClosed = true
+	return nil
+}
+
+func (c *ConnMock) LocalAddr() net.Addr {
+	return nil
+}
+
+func (c *ConnMock) RemoteAddr() net.Addr {
+	return nil
+}
+
+func (c *ConnMock) SetDeadline(t time.Time) error {
+	return nil
+}
+
+func (c *ConnMock) SetReadDeadline(t time.Time) error {
+	return nil
+}
+
+func (c *ConnMock) SetWriteDeadline(t time.Time) error {
+	return nil
+}
+
+
+func (s *ServerSuite) TestConnectionClose(c *C) {
+	for _, closeConnection := range []bool {true, false} {
+		handler := new(HandlerMock)
+		server := NewServer()
+		server.SetFormat(RFC3164)
+		server.SetHandler(handler)
+		con := ConnMock{ReadData: []byte(exampleSyslog)}
+		server.goScanConnection(&con, closeConnection)
+		server.Wait()
+		c.Check(con.isClosed, Equals, closeConnection)
+	}
 }
