@@ -5,11 +5,11 @@ import (
 	"errors"
 	"net"
 	"sync"
-)
 
-import "github.com/jeromer/syslogparser"
-import "github.com/jeromer/syslogparser/rfc3164"
-import "github.com/jeromer/syslogparser/rfc5424"
+	"github.com/jeromer/syslogparser"
+	"github.com/jeromer/syslogparser/rfc3164"
+	"github.com/jeromer/syslogparser/rfc5424"
+)
 
 type Format int
 
@@ -22,7 +22,7 @@ type Server struct {
 	listeners   []*net.TCPListener
 	connections []net.Conn
 	wait        sync.WaitGroup
-	doneTcp		chan bool
+	doneTcp     chan bool
 	format      Format
 	handler     Handler
 	lastError   error
@@ -118,7 +118,7 @@ func (self *Server) Boot() error {
 func (self *Server) goAcceptConnection(listener *net.TCPListener) {
 	self.wait.Add(1)
 	go func(listener *net.TCPListener) {
-		loop:
+	loop:
 		for {
 			select {
 			case <-self.doneTcp:

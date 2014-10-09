@@ -1,7 +1,9 @@
 package syslog
 
-import . "launchpad.net/gocheck"
-import "github.com/jeromer/syslogparser"
+import (
+	"github.com/jeromer/syslogparser"
+	. "launchpad.net/gocheck"
+)
 
 type HandlerSuite struct{}
 

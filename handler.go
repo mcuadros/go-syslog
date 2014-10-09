@@ -1,6 +1,8 @@
 package syslog
 
-import "github.com/jeromer/syslogparser"
+import (
+	"github.com/jeromer/syslogparser"
+)
 
 //The handler receive every syslog entry at Handle method
 type Handler interface {

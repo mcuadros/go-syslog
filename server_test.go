@@ -1,15 +1,13 @@
 package syslog
 
 import (
+	"io"
 	"net"
 	"testing"
 	"time"
-)
 
-import . "launchpad.net/gocheck"
-import (
 	"github.com/jeromer/syslogparser"
-	"io"
+	. "launchpad.net/gocheck"
 )
 
 func Test(t *testing.T) { TestingT(t) }
@@ -99,9 +97,8 @@ func (c *ConnMock) SetWriteDeadline(t time.Time) error {
 	return nil
 }
 
-
 func (s *ServerSuite) TestConnectionClose(c *C) {
-	for _, closeConnection := range []bool {true, false} {
+	for _, closeConnection := range []bool{true, false} {
 		handler := new(HandlerMock)
 		server := NewServer()
 		server.SetFormat(RFC3164)
