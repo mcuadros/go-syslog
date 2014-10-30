@@ -120,7 +120,7 @@ func (s *ServerSuite) TestTcpTimeout(c *C) {
 	server := NewServer()
 	server.SetFormat(RFC3164)
 	server.SetHandler(handler)
-	server.ReadTimeoutMilliseconds = 10
+	server.SetTimeout(10)
 	con := ConnMock{ReadData: []byte(exampleSyslog), ReturnTimeout: true}
 	c.Check(con.isReadDeadline, Equals, false)
 	server.goScanConnection(&con, true)

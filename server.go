@@ -27,7 +27,7 @@ type Server struct {
 	format                  Format
 	handler                 Handler
 	lastError               error
-	ReadTimeoutMilliseconds int64
+	readTimeoutMilliseconds int64
 }
 
 //NewServer returns a new Server
@@ -45,6 +45,11 @@ func (self *Server) SetFormat(format Format) {
 //Sets the handler, this handler with receive every syslog entry
 func (self *Server) SetHandler(handler Handler) {
 	self.handler = handler
+}
+
+//Sets the connection timeout for TCP connections, in milliseconds
+func (self *Server) SetTimeout(millseconds int64) {
+	self.readTimeoutMilliseconds = millseconds
 }
 
 //Configure the server for listen on an UDP addr
@@ -176,8 +181,8 @@ func (self *Server) scan(scanCloser *ScanCloser) {
 				break loop
 			default:
 			}
-			if self.ReadTimeoutMilliseconds > 0 {
-				scanCloser.closer.SetReadDeadline(time.Now().Add(time.Duration(self.ReadTimeoutMilliseconds) * time.Millisecond))
+			if self.readTimeoutMilliseconds > 0 {
+				scanCloser.closer.SetReadDeadline(time.Now().Add(time.Duration(self.readTimeoutMilliseconds) * time.Millisecond))
 			}
 			if scanCloser.Scan() {
 				self.parser([]byte(scanCloser.Text()))
