@@ -54,13 +54,17 @@ func (self *HandlerMock) Handle(logParts syslogparser.LogParts) {
 }
 
 type ConnMock struct {
-	ReadData []byte
-	isClosed bool
+	ReadData       []byte
+	ReturnTimeout  bool
+	isClosed       bool
+	isReadDeadline bool
 }
 
 func (c *ConnMock) Read(b []byte) (n int, err error) {
+	if c.ReturnTimeout {
+		return 0, net.UnknownNetworkError("i/o timeout")
+	}
 	if c.ReadData != nil {
-		//b := make([]byte, len(c.readData))
 		l := copy(b, c.ReadData)
 		c.ReadData = nil
 		return l, nil
@@ -90,6 +94,7 @@ func (c *ConnMock) SetDeadline(t time.Time) error {
 }
 
 func (c *ConnMock) SetReadDeadline(t time.Time) error {
+	c.isReadDeadline = true
 	return nil
 }
 
@@ -108,4 +113,18 @@ func (s *ServerSuite) TestConnectionClose(c *C) {
 		server.Wait()
 		c.Check(con.isClosed, Equals, closeConnection)
 	}
+}
+
+func (s *ServerSuite) TestTcpTimeout(c *C) {
+	handler := new(HandlerMock)
+	server := NewServer()
+	server.SetFormat(RFC3164)
+	server.SetHandler(handler)
+	server.ReadTimeoutMilliseconds = 10
+	con := ConnMock{ReadData: []byte(exampleSyslog), ReturnTimeout: true}
+	c.Check(con.isReadDeadline, Equals, false)
+	server.goScanConnection(&con, true)
+	server.Wait()
+	c.Check(con.isReadDeadline, Equals, true)
+	c.Check(handler.LastLogParts, IsNil)
 }
