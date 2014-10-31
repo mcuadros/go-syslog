@@ -21,7 +21,7 @@ How import the package
 import "github.com/mcuadros/go-syslog"
 ```
 
-Example of a basic syslog [upd server](example/basic_udp.go):    
+Example of a basic syslog [UDP server](example/basic_udp.go):    
 
 ```go
 channel := make(syslog.LogPartsChannel)
