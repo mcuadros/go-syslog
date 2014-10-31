@@ -9,6 +9,7 @@ import (
 	"github.com/jeromer/syslogparser"
 	"github.com/jeromer/syslogparser/rfc3164"
 	"github.com/jeromer/syslogparser/rfc5424"
+	"time"
 )
 
 type Format int
@@ -19,13 +20,14 @@ const (
 )
 
 type Server struct {
-	listeners   []*net.TCPListener
-	connections []net.Conn
-	wait        sync.WaitGroup
-	doneTcp     chan bool
-	format      Format
-	handler     Handler
-	lastError   error
+	listeners               []*net.TCPListener
+	connections             []net.Conn
+	wait                    sync.WaitGroup
+	doneTcp                 chan bool
+	format                  Format
+	handler                 Handler
+	lastError               error
+	readTimeoutMilliseconds int64
 }
 
 //NewServer returns a new Server
@@ -40,9 +42,14 @@ func (self *Server) SetFormat(format Format) {
 	self.format = format
 }
 
-//Sets the handler, this halder with receive every syslog entry
+//Sets the handler, this handler with receive every syslog entry
 func (self *Server) SetHandler(handler Handler) {
 	self.handler = handler
+}
+
+//Sets the connection timeout for TCP connections, in milliseconds
+func (self *Server) SetTimeout(millseconds int64) {
+	self.readTimeoutMilliseconds = millseconds
 }
 
 //Configure the server for listen on an UDP addr
@@ -137,13 +144,14 @@ func (self *Server) goAcceptConnection(listener *net.TCPListener) {
 	}(listener)
 }
 
-type Closer interface {
+type TimeoutCloser interface {
 	Close() error
+	SetReadDeadline(t time.Time) error
 }
 
 type ScanCloser struct {
 	*bufio.Scanner
-	closer Closer
+	closer TimeoutCloser
 }
 
 func (self *Server) goScanConnection(connection net.Conn, needClose bool) {
@@ -161,11 +169,27 @@ func (self *Server) goScanConnection(connection net.Conn, needClose bool) {
 }
 
 func (self *Server) scan(scanCloser *ScanCloser) {
-	for scanCloser.Scan() {
-		self.parser([]byte(scanCloser.Text()))
-	}
-
-	if scanCloser.closer != nil {
+	if scanCloser.closer == nil {
+		for scanCloser.Scan() {
+			self.parser([]byte(scanCloser.Text()))
+		}
+	} else {
+	loop:
+		for {
+			select {
+			case <-self.doneTcp:
+				break loop
+			default:
+			}
+			if self.readTimeoutMilliseconds > 0 {
+				scanCloser.closer.SetReadDeadline(time.Now().Add(time.Duration(self.readTimeoutMilliseconds) * time.Millisecond))
+			}
+			if scanCloser.Scan() {
+				self.parser([]byte(scanCloser.Text()))
+			} else {
+				break loop
+			}
+		}
 		scanCloser.closer.Close()
 	}
 
@@ -208,6 +232,9 @@ func (self *Server) GetLastError() error {
 
 //Kill the server
 func (self *Server) Kill() error {
+	// Only need to close channel once to broadcast to all waiting
+	close(self.doneTcp)
+
 	for _, connection := range self.connections {
 		err := connection.Close()
 		if err != nil {
@@ -220,7 +247,6 @@ func (self *Server) Kill() error {
 		if err != nil {
 			return err
 		}
-		close(self.doneTcp)
 	}
 
 	return nil
