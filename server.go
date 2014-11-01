@@ -232,9 +232,6 @@ func (self *Server) GetLastError() error {
 
 //Kill the server
 func (self *Server) Kill() error {
-	// Only need to close channel once to broadcast to all waiting
-	close(self.doneTcp)
-
 	for _, connection := range self.connections {
 		err := connection.Close()
 		if err != nil {
@@ -248,6 +245,8 @@ func (self *Server) Kill() error {
 			return err
 		}
 	}
+	// Only need to close channel once to broadcast to all waiting
+	close(self.doneTcp)
 
 	return nil
 }
