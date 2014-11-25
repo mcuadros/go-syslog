@@ -246,7 +246,9 @@ func (self *Server) Kill() error {
 		}
 	}
 	// Only need to close channel once to broadcast to all waiting
-	close(self.doneTcp)
+	if self.doneTcp != nil {
+		close(self.doneTcp)
+	}
 
 	return nil
 }
