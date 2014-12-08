@@ -206,11 +206,12 @@ func (self *Server) parser(line []byte) {
 		parser = self.getParserRFC5424(line)
 	}
 
-	if err := parser.Parse(); err != nil {
+	err := parser.Parse()
+	if err != nil {
 		self.lastError = err
 	}
 
-	go self.handler.Handle(parser.Dump())
+	go self.handler.Handle(parser.Dump(), int64(len(line)), err)
 }
 
 func (self *Server) getParserRFC3164(line []byte) *rfc3164.Parser {
