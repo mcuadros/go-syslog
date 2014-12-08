@@ -49,7 +49,7 @@ type HandlerMock struct {
 	LastLogParts syslogparser.LogParts
 }
 
-func (self *HandlerMock) Handle(logParts syslogparser.LogParts) {
+func (self *HandlerMock) Handle(logParts syslogparser.LogParts, msgLen int64, err error) {
 	self.LastLogParts = logParts
 }
 
