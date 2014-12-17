@@ -43,14 +43,20 @@ func (s *ServerSuite) TestTailFile(c *C) {
 	c.Check(handler.LastLogParts["hostname"], Equals, "hostname")
 	c.Check(handler.LastLogParts["tag"], Equals, "tag")
 	c.Check(handler.LastLogParts["content"], Equals, "content")
+	c.Check(handler.LastMessageLength, Equals, int64(len(exampleSyslog)))
+	c.Check(handler.LastError, IsNil)
 }
 
 type HandlerMock struct {
 	LastLogParts syslogparser.LogParts
+	LastMessageLength int64
+	LastError error
 }
 
 func (self *HandlerMock) Handle(logParts syslogparser.LogParts, msgLen int64, err error) {
 	self.LastLogParts = logParts
+	self.LastMessageLength = msgLen
+	self.LastError = err
 }
 
 type ConnMock struct {
@@ -127,4 +133,6 @@ func (s *ServerSuite) TestTcpTimeout(c *C) {
 	server.Wait()
 	c.Check(con.isReadDeadline, Equals, true)
 	c.Check(handler.LastLogParts, IsNil)
+	c.Check(handler.LastMessageLength, Equals, int64(0))
+	c.Check(handler.LastError, IsNil)
 }
