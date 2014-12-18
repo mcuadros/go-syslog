@@ -6,17 +6,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/jeromer/syslogparser"
-	"github.com/jeromer/syslogparser/rfc3164"
-	"github.com/jeromer/syslogparser/rfc5424"
 	"time"
-)
-
-type Format int
-
-const (
-	RFC3164 Format = 1 + iota // RFC3164: http://www.ietf.org/rfc/rfc3164.txt
-	RFC5424                   // RFC5424: http://www.ietf.org/rfc/rfc5424.txt
 )
 
 type Server struct {
@@ -103,7 +93,7 @@ func (self *Server) ListenTCP(addr string) error {
 
 //Starts the server, all the go routines goes to live
 func (self *Server) Boot() error {
-	if self.format == 0 {
+	if self.format == nil {
 		return errors.New("please set a valid format")
 	}
 
@@ -197,33 +187,14 @@ func (self *Server) scan(scanCloser *ScanCloser) {
 }
 
 func (self *Server) parser(line []byte) {
-	var parser syslogparser.LogParser
-
-	switch self.format {
-	case RFC3164:
-		parser = self.getParserRFC3164(line)
-	case RFC5424:
-		parser = self.getParserRFC5424(line)
-	}
-
+	parser := self.format.GetParser(line)
 	err := parser.Parse()
+
 	if err != nil {
 		self.lastError = err
 	}
 
 	go self.handler.Handle(parser.Dump(), int64(len(line)), err)
-}
-
-func (self *Server) getParserRFC3164(line []byte) *rfc3164.Parser {
-	parser := rfc3164.NewParser(line)
-
-	return parser
-}
-
-func (self *Server) getParserRFC5424(line []byte) *rfc5424.Parser {
-	parser := rfc5424.NewParser(line)
-
-	return parser
 }
 
 //Returns the last error
