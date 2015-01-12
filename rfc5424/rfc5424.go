@@ -530,6 +530,10 @@ func parseStructuredData(buff []byte, cursor *int, l int) (string, error) {
 	var sdData string
 	var found bool
 
+	if *cursor >= l {
+                return "-", nil
+        }
+
 	if buff[*cursor] == NILVALUE {
 		*cursor++
 		return "-", nil
