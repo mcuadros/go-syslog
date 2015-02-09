@@ -2,14 +2,17 @@ package syslog
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"net"
+	"strconv"
 	"sync"
+
+	"time"
 
 	"github.com/jeromer/syslogparser"
 	"github.com/jeromer/syslogparser/rfc3164"
 	"github.com/jeromer/syslogparser/rfc5424"
-	"time"
 )
 
 type Format int
@@ -17,6 +20,7 @@ type Format int
 const (
 	RFC3164 Format = 1 + iota // RFC3164: http://www.ietf.org/rfc/rfc3164.txt
 	RFC5424                   // RFC5424: http://www.ietf.org/rfc/rfc5424.txt
+	RFC6587                   // RFC6587: http://www.ietf.org/rfc/rfc6587.txt
 )
 
 type Server struct {
@@ -37,7 +41,7 @@ func NewServer() *Server {
 	return server
 }
 
-//Sets the syslog format (RFC3164 or RFC5424)
+//Sets the syslog format (RFC3164 or RFC5424 or RFC6587)
 func (self *Server) SetFormat(format Format) {
 	self.format = format
 }
@@ -154,8 +158,33 @@ type ScanCloser struct {
 	closer TimeoutCloser
 }
 
+func rfc6587ScannerSplit(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if atEOF && len(data) == 0 {
+		return 0, nil, nil
+	}
+
+	if i := bytes.IndexByte(data, ' '); i > 0 {
+		pLength := data[0:i]
+		length, err := strconv.Atoi(string(pLength))
+		if err != nil {
+			return 0, nil, err
+		}
+		if len(data) >= length+i+1 {
+			//Return the frame with the length removed
+			return length + i + 1, data[i+1 : length+i+1], nil
+		}
+	}
+
+	// Request more data
+	return 0, nil, nil
+}
+
 func (self *Server) goScanConnection(connection net.Conn, needClose bool) {
 	scanner := bufio.NewScanner(connection)
+	switch self.format {
+	case RFC6587:
+		scanner.Split(rfc6587ScannerSplit)
+	}
 
 	var scanCloser *ScanCloser
 	if needClose {
@@ -170,10 +199,12 @@ func (self *Server) goScanConnection(connection net.Conn, needClose bool) {
 
 func (self *Server) scan(scanCloser *ScanCloser) {
 	if scanCloser.closer == nil {
+		// UDP
 		for scanCloser.Scan() {
 			self.parser([]byte(scanCloser.Text()))
 		}
 	} else {
+		// TCP
 	loop:
 		for {
 			select {
@@ -202,7 +233,7 @@ func (self *Server) parser(line []byte) {
 	switch self.format {
 	case RFC3164:
 		parser = self.getParserRFC3164(line)
-	case RFC5424:
+	case RFC5424, RFC6587:
 		parser = self.getParserRFC5424(line)
 	}
 
