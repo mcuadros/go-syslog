@@ -169,9 +169,10 @@ func rfc6587ScannerSplit(data []byte, atEOF bool) (advance int, token []byte, er
 		if err != nil {
 			return 0, nil, err
 		}
-		if len(data) >= length+i+1 {
+		end := length + i + 1
+		if len(data) >= end {
 			//Return the frame with the length removed
-			return length + i + 1, data[i+1 : length+i+1], nil
+			return end, data[i+1 : end], nil
 		}
 	}
 
