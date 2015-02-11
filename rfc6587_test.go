@@ -61,7 +61,7 @@ func TestBadSplit(t *testing.T) {
 	if err := scanner.Err(); err == nil {
 		t.Error("Expected an error, but didn't get one")
 	} else {
-		t.Log("Error: ", err)
+		t.Log("Error was: ", err)
 	}
 
 }
