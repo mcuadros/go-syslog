@@ -48,9 +48,9 @@ func (s *ServerSuite) TestTailFile(c *C) {
 }
 
 type HandlerMock struct {
-	LastLogParts syslogparser.LogParts
+	LastLogParts      syslogparser.LogParts
 	LastMessageLength int64
-	LastError error
+	LastError         error
 }
 
 func (self *HandlerMock) Handle(logParts syslogparser.LogParts, msgLen int64, err error) {

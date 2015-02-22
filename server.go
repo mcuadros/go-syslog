@@ -2,25 +2,18 @@ package syslog
 
 import (
 	"bufio"
-	"bytes"
 	"errors"
 	"net"
-	"strconv"
 	"sync"
-
 	"time"
 
-	"github.com/jeromer/syslogparser"
-	"github.com/jeromer/syslogparser/rfc3164"
-	"github.com/jeromer/syslogparser/rfc5424"
+	"github.com/mcuadros/go-syslog/format"
 )
 
-type Format int
-
-const (
-	RFC3164 Format = 1 + iota // RFC3164: http://www.ietf.org/rfc/rfc3164.txt
-	RFC5424                   // RFC5424: http://www.ietf.org/rfc/rfc5424.txt
-	RFC6587                   // RFC6587: http://www.ietf.org/rfc/rfc6587.txt
+var (
+	RFC3164 = &format.RFC3164{} // RFC3164: http://www.ietf.org/rfc/rfc3164.txt
+	RFC5424 = &format.RFC5424{} // RFC5424: http://www.ietf.org/rfc/rfc5424.txt
+	RFC6587 = &format.RFC6587{} // RFC6587: http://www.ietf.org/rfc/rfc6587.txt
 )
 
 type Server struct {
@@ -28,7 +21,7 @@ type Server struct {
 	connections             []net.Conn
 	wait                    sync.WaitGroup
 	doneTcp                 chan bool
-	format                  Format
+	format                  format.Format
 	handler                 Handler
 	lastError               error
 	readTimeoutMilliseconds int64
@@ -36,14 +29,12 @@ type Server struct {
 
 //NewServer returns a new Server
 func NewServer() *Server {
-	server := new(Server)
-
-	return server
+	return &Server{}
 }
 
 //Sets the syslog format (RFC3164 or RFC5424 or RFC6587)
-func (self *Server) SetFormat(format Format) {
-	self.format = format
+func (self *Server) SetFormat(f format.Format) {
+	self.format = f
 }
 
 //Sets the handler, this handler with receive every syslog entry
@@ -107,7 +98,7 @@ func (self *Server) ListenTCP(addr string) error {
 
 //Starts the server, all the go routines goes to live
 func (self *Server) Boot() error {
-	if self.format == 0 {
+	if self.format == nil {
 		return errors.New("please set a valid format")
 	}
 
@@ -148,43 +139,10 @@ func (self *Server) goAcceptConnection(listener *net.TCPListener) {
 	}(listener)
 }
 
-type TimeoutCloser interface {
-	Close() error
-	SetReadDeadline(t time.Time) error
-}
-
-type ScanCloser struct {
-	*bufio.Scanner
-	closer TimeoutCloser
-}
-
-func rfc6587ScannerSplit(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	if atEOF && len(data) == 0 {
-		return 0, nil, nil
-	}
-
-	if i := bytes.IndexByte(data, ' '); i > 0 {
-		pLength := data[0:i]
-		length, err := strconv.Atoi(string(pLength))
-		if err != nil {
-			return 0, nil, err
-		}
-		end := length + i + 1
-		if len(data) >= end {
-			//Return the frame with the length removed
-			return end, data[i+1 : end], nil
-		}
-	}
-
-	// Request more data
-	return 0, nil, nil
-}
-
 func (self *Server) goScanConnection(connection net.Conn, needClose bool) {
 	scanner := bufio.NewScanner(connection)
-	switch self.format {
-	case RFC6587:
-		scanner.Split(rfc6587ScannerSplit)
+	if sf := self.format.GetSplitFunc(); sf != nil {
+		scanner.Split(sf)
 	}
 
 	var scanCloser *ScanCloser
@@ -229,33 +187,13 @@ func (self *Server) scan(scanCloser *ScanCloser) {
 }
 
 func (self *Server) parser(line []byte) {
-	var parser syslogparser.LogParser
-
-	switch self.format {
-	case RFC3164:
-		parser = self.getParserRFC3164(line)
-	case RFC5424, RFC6587:
-		parser = self.getParserRFC5424(line)
-	}
-
+	parser := self.format.GetParser(line)
 	err := parser.Parse()
 	if err != nil {
 		self.lastError = err
 	}
 
 	go self.handler.Handle(parser.Dump(), int64(len(line)), err)
-}
-
-func (self *Server) getParserRFC3164(line []byte) *rfc3164.Parser {
-	parser := rfc3164.NewParser(line)
-
-	return parser
-}
-
-func (self *Server) getParserRFC5424(line []byte) *rfc5424.Parser {
-	parser := rfc5424.NewParser(line)
-
-	return parser
 }
 
 //Returns the last error
@@ -287,4 +225,14 @@ func (self *Server) Kill() error {
 //Waits until the server stops
 func (self *Server) Wait() {
 	self.wait.Wait()
+}
+
+type TimeoutCloser interface {
+	Close() error
+	SetReadDeadline(t time.Time) error
+}
+
+type ScanCloser struct {
+	*bufio.Scanner
+	closer TimeoutCloser
 }

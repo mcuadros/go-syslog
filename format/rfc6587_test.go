@@ -1,4 +1,4 @@
-package syslog
+package format
 
 import (
 	"bufio"
@@ -8,11 +8,13 @@ import (
 	"testing"
 )
 
-func TestSingleSplit(t *testing.T) {
+func TestRFC6587_GetSplitFuncSingleSplit(t *testing.T) {
+	f := RFC6587{}
+
 	find := "I am test."
 	buf := strings.NewReader("10 " + find)
 	scanner := bufio.NewScanner(buf)
-	scanner.Split(rfc6587ScannerSplit)
+	scanner.Split(f.GetSplitFunc())
 	if r := scanner.Scan(); !r {
 		t.Error("Expected Scan() to return true, but didn't")
 	}
@@ -21,7 +23,9 @@ func TestSingleSplit(t *testing.T) {
 	}
 }
 
-func TestMultiSplit(t *testing.T) {
+func TestRFC6587_GetSplitFuncMultiSplit(t *testing.T) {
+	f := RFC6587{}
+
 	find := []string{
 		"I am test.",
 		"I am test 2.",
@@ -32,7 +36,7 @@ func TestMultiSplit(t *testing.T) {
 		fmt.Fprintf(buf, "%d %s", len(i), i)
 	}
 	scanner := bufio.NewScanner(buf)
-	scanner.Split(rfc6587ScannerSplit)
+	scanner.Split(f.GetSplitFunc())
 
 	i := 0
 	for scanner.Scan() {
@@ -44,11 +48,14 @@ func TestMultiSplit(t *testing.T) {
 	}
 }
 
-func TestBadSplit(t *testing.T) {
+func TestRFC6587_GetSplitBadSplit(t *testing.T) {
+	f := RFC6587{}
+
 	find := "I am test.2 ab"
 	buf := strings.NewReader("9 " + find)
 	scanner := bufio.NewScanner(buf)
-	scanner.Split(rfc6587ScannerSplit)
+	scanner.Split(f.GetSplitFunc())
+
 	if r := scanner.Scan(); !r {
 		t.Error("Expected Scan() to return true, but didn't")
 	}
