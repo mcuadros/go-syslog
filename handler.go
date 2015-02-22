@@ -25,11 +25,11 @@ func NewChannelHandler(channel LogPartsChannel) *ChannelHandler {
 }
 
 //The channel to be used
-func (self *ChannelHandler) SetChannel(channel LogPartsChannel) {
-	self.channel = channel
+func (h *ChannelHandler) SetChannel(channel LogPartsChannel) {
+	h.channel = channel
 }
 
 //Syslog entry receiver
-func (self *ChannelHandler) Handle(logParts syslogparser.LogParts, messageLength int64, err error) {
-	self.channel <- logParts
+func (h *ChannelHandler) Handle(logParts syslogparser.LogParts, messageLength int64, err error) {
+	h.channel <- logParts
 }

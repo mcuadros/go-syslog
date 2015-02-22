@@ -53,10 +53,10 @@ type HandlerMock struct {
 	LastError         error
 }
 
-func (self *HandlerMock) Handle(logParts syslogparser.LogParts, msgLen int64, err error) {
-	self.LastLogParts = logParts
-	self.LastMessageLength = msgLen
-	self.LastError = err
+func (s *HandlerMock) Handle(logParts syslogparser.LogParts, msgLen int64, err error) {
+	s.LastLogParts = logParts
+	s.LastMessageLength = msgLen
+	s.LastError = err
 }
 
 type ConnMock struct {

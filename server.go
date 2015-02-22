@@ -33,22 +33,22 @@ func NewServer() *Server {
 }
 
 //Sets the syslog format (RFC3164 or RFC5424 or RFC6587)
-func (self *Server) SetFormat(f format.Format) {
-	self.format = f
+func (s *Server) SetFormat(f format.Format) {
+	s.format = f
 }
 
 //Sets the handler, this handler with receive every syslog entry
-func (self *Server) SetHandler(handler Handler) {
-	self.handler = handler
+func (s *Server) SetHandler(handler Handler) {
+	s.handler = handler
 }
 
 //Sets the connection timeout for TCP connections, in milliseconds
-func (self *Server) SetTimeout(millseconds int64) {
-	self.readTimeoutMilliseconds = millseconds
+func (s *Server) SetTimeout(millseconds int64) {
+	s.readTimeoutMilliseconds = millseconds
 }
 
 //Configure the server for listen on an UDP addr
-func (self *Server) ListenUDP(addr string) error {
+func (s *Server) ListenUDP(addr string) error {
 	udpAddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
 		return err
@@ -59,12 +59,12 @@ func (self *Server) ListenUDP(addr string) error {
 		return err
 	}
 
-	self.connections = append(self.connections, connection)
+	s.connections = append(s.connections, connection)
 	return nil
 }
 
 //Configure the server for listen on an unix socket
-func (self *Server) ListenUnixgram(addr string) error {
+func (s *Server) ListenUnixgram(addr string) error {
 	unixAddr, err := net.ResolveUnixAddr("unixgram", addr)
 	if err != nil {
 		return err
@@ -75,12 +75,12 @@ func (self *Server) ListenUnixgram(addr string) error {
 		return err
 	}
 
-	self.connections = append(self.connections, connection)
+	s.connections = append(s.connections, connection)
 	return nil
 }
 
 //Configure the server for listen on a TCP addr
-func (self *Server) ListenTCP(addr string) error {
+func (s *Server) ListenTCP(addr string) error {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
 	if err != nil {
 		return err
@@ -91,39 +91,39 @@ func (self *Server) ListenTCP(addr string) error {
 		return err
 	}
 
-	self.doneTcp = make(chan bool)
-	self.listeners = append(self.listeners, listener)
+	s.doneTcp = make(chan bool)
+	s.listeners = append(s.listeners, listener)
 	return nil
 }
 
 //Starts the server, all the go routines goes to live
-func (self *Server) Boot() error {
-	if self.format == nil {
+func (s *Server) Boot() error {
+	if s.format == nil {
 		return errors.New("please set a valid format")
 	}
 
-	if self.handler == nil {
+	if s.handler == nil {
 		return errors.New("please set a valid handler")
 	}
 
-	for _, listener := range self.listeners {
-		self.goAcceptConnection(listener)
+	for _, listener := range s.listeners {
+		s.goAcceptConnection(listener)
 	}
 
-	for _, connection := range self.connections {
-		self.goScanConnection(connection, false)
+	for _, connection := range s.connections {
+		s.goScanConnection(connection, false)
 	}
 
 	return nil
 }
 
-func (self *Server) goAcceptConnection(listener *net.TCPListener) {
-	self.wait.Add(1)
+func (s *Server) goAcceptConnection(listener *net.TCPListener) {
+	s.wait.Add(1)
 	go func(listener *net.TCPListener) {
 	loop:
 		for {
 			select {
-			case <-self.doneTcp:
+			case <-s.doneTcp:
 				break loop
 			default:
 			}
@@ -132,16 +132,16 @@ func (self *Server) goAcceptConnection(listener *net.TCPListener) {
 				continue
 			}
 
-			self.goScanConnection(connection, true)
+			s.goScanConnection(connection, true)
 		}
 
-		self.wait.Done()
+		s.wait.Done()
 	}(listener)
 }
 
-func (self *Server) goScanConnection(connection net.Conn, needClose bool) {
+func (s *Server) goScanConnection(connection net.Conn, needClose bool) {
 	scanner := bufio.NewScanner(connection)
-	if sf := self.format.GetSplitFunc(); sf != nil {
+	if sf := s.format.GetSplitFunc(); sf != nil {
 		scanner.Split(sf)
 	}
 
@@ -152,30 +152,30 @@ func (self *Server) goScanConnection(connection net.Conn, needClose bool) {
 		scanCloser = &ScanCloser{scanner, nil}
 	}
 
-	self.wait.Add(1)
-	go self.scan(scanCloser)
+	s.wait.Add(1)
+	go s.scan(scanCloser)
 }
 
-func (self *Server) scan(scanCloser *ScanCloser) {
+func (s *Server) scan(scanCloser *ScanCloser) {
 	if scanCloser.closer == nil {
 		// UDP
 		for scanCloser.Scan() {
-			self.parser([]byte(scanCloser.Text()))
+			s.parser([]byte(scanCloser.Text()))
 		}
 	} else {
 		// TCP
 	loop:
 		for {
 			select {
-			case <-self.doneTcp:
+			case <-s.doneTcp:
 				break loop
 			default:
 			}
-			if self.readTimeoutMilliseconds > 0 {
-				scanCloser.closer.SetReadDeadline(time.Now().Add(time.Duration(self.readTimeoutMilliseconds) * time.Millisecond))
+			if s.readTimeoutMilliseconds > 0 {
+				scanCloser.closer.SetReadDeadline(time.Now().Add(time.Duration(s.readTimeoutMilliseconds) * time.Millisecond))
 			}
 			if scanCloser.Scan() {
-				self.parser([]byte(scanCloser.Text()))
+				s.parser([]byte(scanCloser.Text()))
 			} else {
 				break loop
 			}
@@ -183,48 +183,48 @@ func (self *Server) scan(scanCloser *ScanCloser) {
 		scanCloser.closer.Close()
 	}
 
-	self.wait.Done()
+	s.wait.Done()
 }
 
-func (self *Server) parser(line []byte) {
-	parser := self.format.GetParser(line)
+func (s *Server) parser(line []byte) {
+	parser := s.format.GetParser(line)
 	err := parser.Parse()
 	if err != nil {
-		self.lastError = err
+		s.lastError = err
 	}
 
-	go self.handler.Handle(parser.Dump(), int64(len(line)), err)
+	go s.handler.Handle(parser.Dump(), int64(len(line)), err)
 }
 
 //Returns the last error
-func (self *Server) GetLastError() error {
-	return self.lastError
+func (s *Server) GetLastError() error {
+	return s.lastError
 }
 
 //Kill the server
-func (self *Server) Kill() error {
-	for _, connection := range self.connections {
+func (s *Server) Kill() error {
+	for _, connection := range s.connections {
 		err := connection.Close()
 		if err != nil {
 			return err
 		}
 	}
 
-	for _, listener := range self.listeners {
+	for _, listener := range s.listeners {
 		err := listener.Close()
 		if err != nil {
 			return err
 		}
 	}
 	// Only need to close channel once to broadcast to all waiting
-	close(self.doneTcp)
+	close(s.doneTcp)
 
 	return nil
 }
 
 //Waits until the server stops
-func (self *Server) Wait() {
-	self.wait.Wait()
+func (s *Server) Wait() {
+	s.wait.Wait()
 }
 
 type TimeoutCloser interface {
