@@ -5,25 +5,23 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
-	"testing"
+
+	. "launchpad.net/gocheck"
 )
 
-func TestRFC6587_GetSplitFuncSingleSplit(t *testing.T) {
+func (s *FormatSuite) TestRFC6587_GetSplitFuncSingleSplit(c *C) {
 	f := RFC6587{}
 
-	find := "I am test."
-	buf := strings.NewReader("10 " + find)
+	buf := strings.NewReader("10 I am test.")
 	scanner := bufio.NewScanner(buf)
 	scanner.Split(f.GetSplitFunc())
-	if r := scanner.Scan(); !r {
-		t.Error("Expected Scan() to return true, but didn't")
-	}
-	if found := scanner.Text(); found != find {
-		t.Errorf("Expected the right ('%s') token, but got: '%s'\n", find, found)
-	}
+
+	r := scanner.Scan()
+	c.Assert(r, NotNil)
+	c.Assert(scanner.Text(), Equals, "I am test.")
 }
 
-func TestRFC6587_GetSplitFuncMultiSplit(t *testing.T) {
+func (s *FormatSuite) TestRFC6587_GetSplitFuncMultiSplit(c *C) {
 	f := RFC6587{}
 
 	find := []string{
@@ -40,15 +38,14 @@ func TestRFC6587_GetSplitFuncMultiSplit(t *testing.T) {
 
 	i := 0
 	for scanner.Scan() {
+		c.Assert(scanner.Text(), Equals, find[i])
 		i++
 	}
 
-	if i != len(find) {
-		t.Errorf("Expected to find %d items, but found: %d\n", len(find), i)
-	}
+	c.Assert(i, Equals, len(find))
 }
 
-func TestRFC6587_GetSplitBadSplit(t *testing.T) {
+func (s *FormatSuite) TestRFC6587_GetSplitBadSplit(c *C) {
 	f := RFC6587{}
 
 	find := "I am test.2 ab"
@@ -56,19 +53,13 @@ func TestRFC6587_GetSplitBadSplit(t *testing.T) {
 	scanner := bufio.NewScanner(buf)
 	scanner.Split(f.GetSplitFunc())
 
-	if r := scanner.Scan(); !r {
-		t.Error("Expected Scan() to return true, but didn't")
-	}
-	if found := scanner.Text(); found != find[0:9] {
-		t.Errorf("Expected to find %s, but found %s.", find[0:9], found)
-	}
-	if r := scanner.Scan(); r {
-		t.Error("Expected Scan() to return false, but didn't")
-	}
-	if err := scanner.Err(); err == nil {
-		t.Error("Expected an error, but didn't get one")
-	} else {
-		t.Log("Error was: ", err)
-	}
+	r := scanner.Scan()
+	c.Assert(r, NotNil)
+	c.Assert(scanner.Text(), Equals, find[0:9])
 
+	r = scanner.Scan()
+	c.Assert(r, NotNil)
+
+	err := scanner.Err()
+	c.Assert(err, ErrorMatches, "strconv.ParseInt: parsing \".2\": invalid syntax")
 }
