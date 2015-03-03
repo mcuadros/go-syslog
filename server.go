@@ -217,8 +217,9 @@ func (s *Server) Kill() error {
 		}
 	}
 	// Only need to close channel once to broadcast to all waiting
-	close(s.doneTcp)
-
+	if s.doneTcp != nil {
+		close(s.doneTcp)
+	}
 	return nil
 }
 

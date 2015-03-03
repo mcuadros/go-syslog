@@ -121,6 +121,20 @@ func (s *ServerSuite) TestConnectionClose(c *C) {
 	}
 }
 
+func (s *ServerSuite) TestConnectionUDPKill(c *C) {
+	for _, closeConnection := range []bool{true, false} {
+		handler := new(HandlerMock)
+		server := NewServer()
+		server.SetFormat(RFC5424)
+		server.SetHandler(handler)
+		con := ConnMock{ReadData: []byte(exampleSyslog)}
+		server.goScanConnection(&con, closeConnection)
+		server.Kill()
+		server.Wait()
+		c.Check(con.isClosed, Equals, closeConnection)
+	}
+}
+
 func (s *ServerSuite) TestTcpTimeout(c *C) {
 	handler := new(HandlerMock)
 	server := NewServer()
