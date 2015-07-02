@@ -16,11 +16,18 @@ var (
 	RFC6587 = &format.RFC6587{} // RFC6587: http://www.ietf.org/rfc/rfc6587.txt
 )
 
+const (
+	datagramChannelBufferSize = 10
+	datagramReadBufferSize    = 1024 * 1024
+)
+
 type Server struct {
 	listeners               []*net.TCPListener
 	connections             []net.Conn
 	wait                    sync.WaitGroup
 	doneTcp                 chan bool
+	doneDatagrams           chan bool
+	datagramChannel         chan DatagramMessage
 	format                  format.Format
 	handler                 Handler
 	lastError               error
@@ -58,6 +65,7 @@ func (s *Server) ListenUDP(addr string) error {
 	if err != nil {
 		return err
 	}
+	connection.SetReadBuffer(datagramReadBufferSize)
 
 	s.connections = append(s.connections, connection)
 	return nil
@@ -74,6 +82,7 @@ func (s *Server) ListenUnixgram(addr string) error {
 	if err != nil {
 		return err
 	}
+	connection.SetReadBuffer(datagramReadBufferSize)
 
 	s.connections = append(s.connections, connection)
 	return nil
@@ -110,8 +119,12 @@ func (s *Server) Boot() error {
 		s.goAcceptConnection(listener)
 	}
 
+	if len(s.connections) > 0 {
+		s.goParseDatagrams()
+	}
+
 	for _, connection := range s.connections {
-		s.goScanConnection(connection, false)
+		s.goReceiveDatagrams(connection)
 	}
 
 	return nil
@@ -132,56 +145,44 @@ func (s *Server) goAcceptConnection(listener *net.TCPListener) {
 				continue
 			}
 
-			s.goScanConnection(connection, true)
+			s.goScanConnection(connection)
 		}
 
 		s.wait.Done()
 	}(listener)
 }
 
-func (s *Server) goScanConnection(connection net.Conn, needClose bool) {
+func (s *Server) goScanConnection(connection net.Conn) {
 	scanner := bufio.NewScanner(connection)
 	if sf := s.format.GetSplitFunc(); sf != nil {
 		scanner.Split(sf)
 	}
 
 	var scanCloser *ScanCloser
-	if needClose {
-		scanCloser = &ScanCloser{scanner, connection}
-	} else {
-		scanCloser = &ScanCloser{scanner, nil}
-	}
+	scanCloser = &ScanCloser{scanner, connection}
 
 	s.wait.Add(1)
 	go s.scan(scanCloser)
 }
 
 func (s *Server) scan(scanCloser *ScanCloser) {
-	if scanCloser.closer == nil {
-		// UDP
-		for scanCloser.Scan() {
+loop:
+	for {
+		select {
+		case <-s.doneTcp:
+			break loop
+		default:
+		}
+		if s.readTimeoutMilliseconds > 0 {
+			scanCloser.closer.SetReadDeadline(time.Now().Add(time.Duration(s.readTimeoutMilliseconds) * time.Millisecond))
+		}
+		if scanCloser.Scan() {
 			s.parser([]byte(scanCloser.Text()))
+		} else {
+			break loop
 		}
-	} else {
-		// TCP
-	loop:
-		for {
-			select {
-			case <-s.doneTcp:
-				break loop
-			default:
-			}
-			if s.readTimeoutMilliseconds > 0 {
-				scanCloser.closer.SetReadDeadline(time.Now().Add(time.Duration(s.readTimeoutMilliseconds) * time.Millisecond))
-			}
-			if scanCloser.Scan() {
-				s.parser([]byte(scanCloser.Text()))
-			} else {
-				break loop
-			}
-		}
-		scanCloser.closer.Close()
 	}
+	scanCloser.closer.Close()
 
 	s.wait.Done()
 }
@@ -220,6 +221,12 @@ func (s *Server) Kill() error {
 	if s.doneTcp != nil {
 		close(s.doneTcp)
 	}
+	if s.doneDatagrams != nil {
+		close(s.doneDatagrams)
+	}
+	if s.datagramChannel != nil {
+		close(s.datagramChannel)
+	}
 	return nil
 }
 
@@ -236,4 +243,62 @@ type TimeoutCloser interface {
 type ScanCloser struct {
 	*bufio.Scanner
 	closer TimeoutCloser
+}
+
+type DatagramMessage struct {
+	message []byte
+	client  string
+}
+
+func (s *Server) goReceiveDatagrams(connection net.Conn) {
+	s.wait.Add(1)
+	go func() {
+		packetconn, ok := connection.(net.PacketConn)
+		if ok {
+		loop:
+			for {
+				select {
+				case <-s.doneDatagrams:
+					break loop
+				default:
+				}
+				if s.readTimeoutMilliseconds > 0 {
+					connection.SetReadDeadline(time.Now().Add(time.Duration(s.readTimeoutMilliseconds) * time.Millisecond))
+				}
+				buf := make([]byte, 65536)
+				n, addr, err := packetconn.ReadFrom(buf)
+				if err == nil {
+					// Ignore trailing control characters and NULs
+					for ; (n > 0) && (buf[n-1] < 32); n-- {
+					}
+					if n > 0 {
+						s.datagramChannel <- DatagramMessage{buf[:n], addr.String()}
+					}
+				}
+			}
+			s.wait.Done()
+		}
+	}()
+}
+
+func (s *Server) goParseDatagrams() {
+	s.doneDatagrams = make(chan bool)
+	s.datagramChannel = make(chan DatagramMessage, datagramChannelBufferSize)
+
+	s.wait.Add(1)
+	go func() {
+	loop:
+		for {
+			select {
+			case <-s.doneDatagrams:
+				break loop
+			case msg, ok := (<-s.datagramChannel):
+				if !ok {
+					break loop
+				}
+				s.parser(msg.message)
+			}
+		}
+		s.wait.Done()
+	}()
 }
