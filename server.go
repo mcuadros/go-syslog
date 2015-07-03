@@ -160,11 +160,17 @@ func (s *Server) goScanConnection(connection net.Conn) {
 	var scanCloser *ScanCloser
 	scanCloser = &ScanCloser{scanner, connection}
 
+	remoteAddr := connection.RemoteAddr()
+	var client string
+	if remoteAddr != nil {
+		client = remoteAddr.String()
+	}
+
 	s.wait.Add(1)
-	go s.scan(scanCloser)
+	go s.scan(scanCloser, client)
 }
 
-func (s *Server) scan(scanCloser *ScanCloser) {
+func (s *Server) scan(scanCloser *ScanCloser, client string) {
 loop:
 	for {
 		select {
@@ -176,7 +182,7 @@ loop:
 			scanCloser.closer.SetReadDeadline(time.Now().Add(time.Duration(s.readTimeoutMilliseconds) * time.Millisecond))
 		}
 		if scanCloser.Scan() {
-			s.parser([]byte(scanCloser.Text()))
+			s.parser([]byte(scanCloser.Text()), client)
 		} else {
 			break loop
 		}
@@ -186,14 +192,17 @@ loop:
 	s.wait.Done()
 }
 
-func (s *Server) parser(line []byte) {
+func (s *Server) parser(line []byte, client string) {
 	parser := s.format.GetParser(line)
 	err := parser.Parse()
 	if err != nil {
 		s.lastError = err
 	}
 
-	go s.handler.Handle(parser.Dump(), int64(len(line)), err)
+	logParts := parser.Dump()
+	logParts["client"] = client
+
+	go s.handler.Handle(logParts, int64(len(line)), err)
 }
 
 //Returns the last error
@@ -290,7 +299,7 @@ func (s *Server) goParseDatagrams() {
 				if !ok {
 					return
 				}
-				s.parser(msg.message)
+				s.parser(msg.message, msg.client)
 			}
 		}
 	}()
