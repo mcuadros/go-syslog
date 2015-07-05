@@ -109,30 +109,26 @@ func (c *ConnMock) SetWriteDeadline(t time.Time) error {
 }
 
 func (s *ServerSuite) TestConnectionClose(c *C) {
-	for _, closeConnection := range []bool{true, false} {
-		handler := new(HandlerMock)
-		server := NewServer()
-		server.SetFormat(RFC3164)
-		server.SetHandler(handler)
-		con := ConnMock{ReadData: []byte(exampleSyslog)}
-		server.goScanConnection(&con, closeConnection)
-		server.Wait()
-		c.Check(con.isClosed, Equals, closeConnection)
-	}
+	handler := new(HandlerMock)
+	server := NewServer()
+	server.SetFormat(RFC3164)
+	server.SetHandler(handler)
+	con := ConnMock{ReadData: []byte(exampleSyslog)}
+	server.goScanConnection(&con)
+	server.Wait()
+	c.Check(con.isClosed, Equals, true)
 }
 
 func (s *ServerSuite) TestConnectionUDPKill(c *C) {
-	for _, closeConnection := range []bool{true, false} {
-		handler := new(HandlerMock)
-		server := NewServer()
-		server.SetFormat(RFC5424)
-		server.SetHandler(handler)
-		con := ConnMock{ReadData: []byte(exampleSyslog)}
-		server.goScanConnection(&con, closeConnection)
-		server.Kill()
-		server.Wait()
-		c.Check(con.isClosed, Equals, closeConnection)
-	}
+	handler := new(HandlerMock)
+	server := NewServer()
+	server.SetFormat(RFC5424)
+	server.SetHandler(handler)
+	con := ConnMock{ReadData: []byte(exampleSyslog)}
+	server.goScanConnection(&con)
+	server.Kill()
+	server.Wait()
+	c.Check(con.isClosed, Equals, true)
 }
 
 func (s *ServerSuite) TestTcpTimeout(c *C) {
@@ -143,7 +139,7 @@ func (s *ServerSuite) TestTcpTimeout(c *C) {
 	server.SetTimeout(10)
 	con := ConnMock{ReadData: []byte(exampleSyslog), ReturnTimeout: true}
 	c.Check(con.isReadDeadline, Equals, false)
-	server.goScanConnection(&con, true)
+	server.goScanConnection(&con)
 	server.Wait()
 	c.Check(con.isReadDeadline, Equals, true)
 	c.Check(handler.LastLogParts, IsNil)
