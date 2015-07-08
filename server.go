@@ -202,7 +202,7 @@ func (s *Server) parser(line []byte, client string) {
 	logParts := parser.Dump()
 	logParts["client"] = client
 
-	go s.handler.Handle(logParts, int64(len(line)), err)
+	s.handler.Handle(logParts, int64(len(line)), err)
 }
 
 //Returns the last error
