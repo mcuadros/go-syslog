@@ -299,7 +299,13 @@ func (s *Server) goParseDatagrams() {
 				if !ok {
 					return
 				}
-				s.parser(msg.message, msg.client)
+				if sf := s.format.GetSplitFunc(); sf != nil {
+					if _, token, err := sf(msg.message, true); err == nil {
+						s.parser(token, msg.client)
+					}
+				} else {
+					s.parser(msg.message, msg.client)
+				}
 			}
 		}
 	}()
