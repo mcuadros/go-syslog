@@ -183,3 +183,73 @@ func (s *ServerSuite) TestUDP6587(c *C) {
 	c.Check(handler.LastMessageLength, Equals, int64(len(exampleRFC5424Syslog)))
 	c.Check(handler.LastError, IsNil)
 }
+
+func (s *ServerSuite) TestUDPAutomatic3164(c *C) {
+	handler := new(HandlerMock)
+	server := NewServer()
+	server.SetFormat(Automatic)
+	server.SetHandler(handler)
+	server.SetTimeout(10)
+	server.goParseDatagrams()
+	server.datagramChannel <- DatagramMessage{[]byte(exampleSyslog), "0.0.0.0"}
+	close(server.datagramChannel)
+	server.Wait()
+	c.Check(handler.LastLogParts["hostname"], Equals, "hostname")
+	c.Check(handler.LastLogParts["tag"], Equals, "tag")
+	c.Check(handler.LastLogParts["content"], Equals, "content")
+	c.Check(handler.LastMessageLength, Equals, int64(len(exampleSyslog)))
+	c.Check(handler.LastError, IsNil)
+}
+
+func (s *ServerSuite) TestUDPAutomatic5424(c *C) {
+	handler := new(HandlerMock)
+	server := NewServer()
+	server.SetFormat(Automatic)
+	server.SetHandler(handler)
+	server.SetTimeout(10)
+	server.goParseDatagrams()
+	server.datagramChannel <- DatagramMessage{[]byte(exampleRFC5424Syslog), "0.0.0.0"}
+	close(server.datagramChannel)
+	server.Wait()
+	c.Check(handler.LastLogParts["hostname"], Equals, "mymachine.example.com")
+	c.Check(handler.LastLogParts["facility"], Equals, 4)
+	c.Check(handler.LastLogParts["message"], Equals, "'su root' failed for lonvick on /dev/pts/8")
+	c.Check(handler.LastMessageLength, Equals, int64(len(exampleRFC5424Syslog)))
+	c.Check(handler.LastError, IsNil)
+}
+
+func (s *ServerSuite) TestUDPAutomatic3164Plus6587OctetCount(c *C) {
+	handler := new(HandlerMock)
+	server := NewServer()
+	server.SetFormat(Automatic)
+	server.SetHandler(handler)
+	server.SetTimeout(10)
+	server.goParseDatagrams()
+	framedSyslog := []byte(fmt.Sprintf("%d %s", len(exampleSyslog), exampleSyslog))
+	server.datagramChannel <- DatagramMessage{[]byte(framedSyslog), "0.0.0.0"}
+	close(server.datagramChannel)
+	server.Wait()
+	c.Check(handler.LastLogParts["hostname"], Equals, "hostname")
+	c.Check(handler.LastLogParts["tag"], Equals, "tag")
+	c.Check(handler.LastLogParts["content"], Equals, "content")
+	c.Check(handler.LastMessageLength, Equals, int64(len(exampleSyslog)))
+	c.Check(handler.LastError, IsNil)
+}
+
+func (s *ServerSuite) TestUDPAutomatic5424Plus6587OctetCount(c *C) {
+	handler := new(HandlerMock)
+	server := NewServer()
+	server.SetFormat(Automatic)
+	server.SetHandler(handler)
+	server.SetTimeout(10)
+	server.goParseDatagrams()
+	framedSyslog := []byte(fmt.Sprintf("%d %s", len(exampleRFC5424Syslog), exampleRFC5424Syslog))
+	server.datagramChannel <- DatagramMessage{[]byte(framedSyslog), "0.0.0.0"}
+	close(server.datagramChannel)
+	server.Wait()
+	c.Check(handler.LastLogParts["hostname"], Equals, "mymachine.example.com")
+	c.Check(handler.LastLogParts["facility"], Equals, 4)
+	c.Check(handler.LastLogParts["message"], Equals, "'su root' failed for lonvick on /dev/pts/8")
+	c.Check(handler.LastMessageLength, Equals, int64(len(exampleRFC5424Syslog)))
+	c.Check(handler.LastError, IsNil)
+}
