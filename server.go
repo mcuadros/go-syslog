@@ -2,6 +2,7 @@ package syslog
 
 import (
 	"bufio"
+	"crypto/tls"
 	"errors"
 	"net"
 	"sync"
@@ -23,7 +24,7 @@ const (
 )
 
 type Server struct {
-	listeners               []*net.TCPListener
+	listeners               []net.Listener
 	connections             []net.Conn
 	wait                    sync.WaitGroup
 	doneTcp                 chan bool
@@ -105,6 +106,18 @@ func (s *Server) ListenTCP(addr string) error {
 	return nil
 }
 
+//Configure the server for listen on a TCP addr for TLS
+func (s *Server) ListenTCPTLS(addr string, config *tls.Config) error {
+	listener, err := tls.Listen("tcp", addr, config)
+	if err != nil {
+		return err
+	}
+
+	s.doneTcp = make(chan bool)
+	s.listeners = append(s.listeners, listener)
+	return nil
+}
+
 //Starts the server, all the go routines goes to live
 func (s *Server) Boot() error {
 	if s.format == nil {
@@ -130,9 +143,9 @@ func (s *Server) Boot() error {
 	return nil
 }
 
-func (s *Server) goAcceptConnection(listener *net.TCPListener) {
+func (s *Server) goAcceptConnection(listener net.Listener) {
 	s.wait.Add(1)
-	go func(listener *net.TCPListener) {
+	go func(listener net.Listener) {
 	loop:
 		for {
 			select {
