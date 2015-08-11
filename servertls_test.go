@@ -26,7 +26,6 @@ func getServerConfig() *tls.Config {
 		ClientAuth:   tls.RequireAndVerifyClientCert,
 		Certificates: []tls.Certificate{cert},
 		ClientCAs:    capool,
-		ServerName:   "dummycert1",
 	}
 	config.Rand = rand.Reader
 
@@ -46,7 +45,7 @@ func getClientConfig() *tls.Config {
 
 	config := tls.Config{
 		Certificates:       []tls.Certificate{cert},
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: false,
 		ServerName:         "dummycert1",
 		RootCAs:            capool,
 	}
