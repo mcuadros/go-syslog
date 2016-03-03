@@ -2,7 +2,7 @@ package syslog
 
 import (
 	"github.com/jeromer/syslogparser"
-	. "launchpad.net/gocheck"
+	. "gopkg.in/check.v1"
 )
 
 type HandlerSuite struct{}

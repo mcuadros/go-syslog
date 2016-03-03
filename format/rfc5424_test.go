@@ -1,7 +1,7 @@
 package format
 
 import (
-	. "launchpad.net/gocheck"
+	. "gopkg.in/check.v1"
 )
 
 func (s *FormatSuite) TestRFC5424_SingleSplit(c *C) {

@@ -8,7 +8,7 @@ import (
 	"io"
 	"time"
 
-	. "launchpad.net/gocheck"
+	. "gopkg.in/check.v1"
 )
 
 func getServerConfig() *tls.Config {
