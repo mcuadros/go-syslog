@@ -323,7 +323,11 @@ func (s *Server) goReceiveDatagrams(connection net.Conn) {
 				for ; (n > 0) && (buf[n-1] < 32); n-- {
 				}
 				if n > 0 {
-					s.datagramChannel <- DatagramMessage{buf[:n], addr.String()}
+					var address string
+					if addr != nil {
+						address = addr.String()
+					}
+					s.datagramChannel <- DatagramMessage{buf[:n], address}
 				}
 			} else {
 				// there has been an error. Either the server has been killed
