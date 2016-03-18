@@ -3,7 +3,7 @@ package format
 import (
 	"bufio"
 
-	"github.com/jeromer/syslogparser"
+	"github.com/Xiol/syslogparser"
 )
 
 type Format interface {

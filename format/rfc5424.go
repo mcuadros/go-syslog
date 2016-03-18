@@ -3,8 +3,8 @@ package format
 import (
 	"bufio"
 
-	"github.com/jeromer/syslogparser"
-	"github.com/jeromer/syslogparser/rfc5424"
+	"github.com/Xiol/syslogparser"
+	"github.com/Xiol/syslogparser/rfc5424"
 )
 
 type RFC5424 struct{}

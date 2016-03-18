@@ -5,8 +5,8 @@ import (
 	"bytes"
 	"strconv"
 
-	"github.com/jeromer/syslogparser"
-	"github.com/jeromer/syslogparser/rfc5424"
+	"github.com/Xiol/syslogparser"
+	"github.com/Xiol/syslogparser/rfc5424"
 )
 
 type RFC6587 struct{}
