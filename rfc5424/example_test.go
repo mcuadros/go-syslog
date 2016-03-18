@@ -2,7 +2,7 @@ package rfc5424_test
 
 import (
 	"fmt"
-	"github.com/jeromer/syslogparser/rfc5424"
+	"github.com/Xiol/syslogparser/rfc5424"
 )
 
 func ExampleNewParser() {
