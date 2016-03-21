@@ -87,6 +87,40 @@ func (s *Rfc3164TestSuite) TestParser_ValidNoTag(c *C) {
 	c.Assert(obtained, DeepEquals, expected)
 }
 
+// RFC 3164 section 4.3.2
+func (s *Rfc3164TestSuite) TestParser_NoTimestamp(c *C) {
+	buff := []byte("<14>INFO     leaving (1) step postscripts")
+
+	p := NewParser(buff)
+	expectedP := &Parser{
+		buff:     buff,
+		cursor:   0,
+		l:        len(buff),
+		location: time.UTC,
+	}
+
+	c.Assert(p, DeepEquals, expectedP)
+
+	err := p.Parse()
+	c.Assert(err, IsNil)
+
+	now := time.Now()
+
+	obtained := p.Dump()
+	obtained["timestamp"] = now // XXX: Need to mock out time to test this fully
+	expected := syslogparser.LogParts{
+		"timestamp": now,
+		"hostname":  "",
+		"tag":       "",
+		"content":   "INFO     leaving (1) step postscripts",
+		"priority":  14,
+		"facility":  1,
+		"severity":  6,
+	}
+
+	c.Assert(obtained, DeepEquals, expected)
+}
+
 func (s *Rfc3164TestSuite) TestParseHeader_Valid(c *C) {
 	buff := []byte("Oct 11 22:14:15 mymachine ")
 	now := time.Now()
