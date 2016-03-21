@@ -2,10 +2,11 @@ package rfc3164
 
 import (
 	"bytes"
-	"github.com/Xiol/syslogparser"
-	. "gopkg.in/check.v1"
 	"testing"
 	"time"
+
+	"github.com/Xiol/syslogparser"
+	. "gopkg.in/check.v1"
 )
 
 // Hooks up gocheck into the gotest runner.
@@ -27,9 +28,10 @@ func (s *Rfc3164TestSuite) TestParser_Valid(c *C) {
 
 	p := NewParser(buff)
 	expectedP := &Parser{
-		buff:   buff,
-		cursor: 0,
-		l:      len(buff),
+		buff:     buff,
+		cursor:   0,
+		l:        len(buff),
+		location: time.UTC,
 	}
 
 	c.Assert(p, DeepEquals, expectedP)
@@ -45,6 +47,38 @@ func (s *Rfc3164TestSuite) TestParser_Valid(c *C) {
 		"hostname":  "mymachine",
 		"tag":       "very.large.syslog.message.tag",
 		"content":   "'su root' failed for lonvick on /dev/pts/8",
+		"priority":  34,
+		"facility":  4,
+		"severity":  2,
+	}
+
+	c.Assert(obtained, DeepEquals, expected)
+}
+
+func (s *Rfc3164TestSuite) TestParser_ValidNoTag(c *C) {
+	buff := []byte("<34>Oct 11 22:14:15 mymachine singleword")
+
+	p := NewParser(buff)
+	expectedP := &Parser{
+		buff:     buff,
+		cursor:   0,
+		l:        len(buff),
+		location: time.UTC,
+	}
+
+	c.Assert(p, DeepEquals, expectedP)
+
+	err := p.Parse()
+	c.Assert(err, IsNil)
+
+	now := time.Now()
+
+	obtained := p.Dump()
+	expected := syslogparser.LogParts{
+		"timestamp": time.Date(now.Year(), time.October, 11, 22, 14, 15, 0, time.UTC),
+		"hostname":  "mymachine",
+		"tag":       "",
+		"content":   "singleword",
 		"priority":  34,
 		"facility":  4,
 		"severity":  2,
@@ -141,6 +175,13 @@ func (s *Rfc3164TestSuite) TestParseTag_TrailingSpace(c *C) {
 	tag := "apache2"
 
 	s.assertTag(c, tag, buff, len(buff), nil)
+}
+
+func (s *Rfc3164TestSuite) TestParseTag_NoTag(c *C) {
+	buff := []byte("apache2")
+	tag := ""
+
+	s.assertTag(c, tag, buff, 0, nil)
 }
 
 func (s *Rfc3164TestSuite) TestParseContent_Valid(c *C) {
