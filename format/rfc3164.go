@@ -3,8 +3,8 @@ package format
 import (
 	"bufio"
 
-	"github.com/Xiol/syslogparser"
-	"github.com/Xiol/syslogparser/rfc3164"
+	"gopkg.in/mcuadros/go-syslog.v2/internal/syslogparser"
+	"gopkg.in/mcuadros/go-syslog.v2/internal/syslogparser/rfc3164"
 )
 
 type RFC3164 struct{}

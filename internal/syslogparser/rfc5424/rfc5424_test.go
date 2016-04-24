@@ -2,10 +2,11 @@ package rfc5424
 
 import (
 	"fmt"
-	"github.com/Xiol/syslogparser"
-	. "gopkg.in/check.v1"
 	"testing"
 	"time"
+
+	. "gopkg.in/check.v1"
+	"gopkg.in/mcuadros/go-syslog.v2/internal/syslogparser"
 )
 
 // Hooks up gocheck into the gotest runner.

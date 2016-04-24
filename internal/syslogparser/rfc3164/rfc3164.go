@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"time"
 
-	"github.com/Xiol/syslogparser"
+	"gopkg.in/mcuadros/go-syslog.v2/internal/syslogparser"
 )
 
 type Parser struct {

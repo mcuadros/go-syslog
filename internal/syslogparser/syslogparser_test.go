@@ -1,8 +1,9 @@
 package syslogparser
 
 import (
-	. "gopkg.in/check.v1"
 	"testing"
+
+	. "gopkg.in/check.v1"
 )
 
 // Hooks up gocheck into the gotest runner.

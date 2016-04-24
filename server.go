@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Xiol/go-syslog/format"
+	"gopkg.in/mcuadros/go-syslog.v2/format"
 )
 
 var (

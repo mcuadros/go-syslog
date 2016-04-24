@@ -1,7 +1,7 @@
 package syslog
 
 import (
-	"github.com/Xiol/syslogparser"
+	"gopkg.in/mcuadros/go-syslog.v2/internal/syslogparser"
 )
 
 //The handler receive every syslog entry at Handle method

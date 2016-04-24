@@ -6,9 +6,9 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/Xiol/syslogparser"
-	"github.com/Xiol/syslogparser/rfc3164"
-	"github.com/Xiol/syslogparser/rfc5424"
+	"gopkg.in/mcuadros/go-syslog.v2/internal/syslogparser"
+	"gopkg.in/mcuadros/go-syslog.v2/internal/syslogparser/rfc3164"
+	"gopkg.in/mcuadros/go-syslog.v2/internal/syslogparser/rfc5424"
 )
 
 /* Selecting an 'Automatic' format detects incoming format (i.e. RFC3164 vs RFC5424) and Framing

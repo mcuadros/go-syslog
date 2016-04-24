@@ -2,7 +2,8 @@ package rfc5424_test
 
 import (
 	"fmt"
-	"github.com/Xiol/syslogparser/rfc5424"
+
+	"gopkg.in/mcuadros/go-syslog.v2/internal/syslogparser/rfc5424"
 )
 
 func ExampleNewParser() {

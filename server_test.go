@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Xiol/syslogparser"
 	. "gopkg.in/check.v1"
+	"gopkg.in/mcuadros/go-syslog.v2/internal/syslogparser"
 )
 
 func Test(t *testing.T) { TestingT(t) }

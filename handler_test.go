@@ -1,8 +1,8 @@
 package syslog
 
 import (
-	"github.com/Xiol/syslogparser"
 	. "gopkg.in/check.v1"
+	"gopkg.in/mcuadros/go-syslog.v2/internal/syslogparser"
 )
 
 type HandlerSuite struct{}
