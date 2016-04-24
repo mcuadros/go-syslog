@@ -23,9 +23,10 @@ func (s *Rfc5424TestSuite) TestParser_Valid(c *C) {
 		"<165>1 2003-08-24T05:14:15.000003-07:00 192.0.2.1 myproc 8710 - - %% It's time to make the do-nuts.",
 		// with STRUCTURED-DATA
 		`<165>1 2003-10-11T22:14:15.003Z mymachine.example.com evntslog - ID47 [exampleSDID@32473 iut="3" eventSource="Application" eventID="1011"] An application event log entry...`,
-
 		// STRUCTURED-DATA Only
 		`<165>1 2003-10-11T22:14:15.003Z mymachine.example.com evntslog - ID47 [exampleSDID@32473 iut="3" eventSource= "Application" eventID="1011"][examplePriority@32473 class="high"]`,
+		// STRUCTURED-DATA Only
+		`<165>1 2003-10-11T22:14:15.003Z mymachine.example.com evntslog - ID47 `,
 	}
 
 	tmpTs, err := time.Parse("-07:00", "-07:00")
@@ -82,6 +83,19 @@ func (s *Rfc5424TestSuite) TestParser_Valid(c *C) {
 			"proc_id":         "-",
 			"msg_id":          "ID47",
 			"structured_data": `[exampleSDID@32473 iut="3" eventSource= "Application" eventID="1011"][examplePriority@32473 class="high"]`,
+			"message":         "",
+		},
+		syslogparser.LogParts{
+			"priority":        165,
+			"facility":        20,
+			"severity":        5,
+			"version":         1,
+			"timestamp":       time.Date(2003, time.October, 11, 22, 14, 15, 3*10e5, time.UTC),
+			"hostname":        "mymachine.example.com",
+			"app_name":        "evntslog",
+			"proc_id":         "-",
+			"msg_id":          "ID47",
+			"structured_data": "-",
 			"message":         "",
 		},
 	}
