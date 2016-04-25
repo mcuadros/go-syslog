@@ -4,12 +4,14 @@ import (
 	"gopkg.in/mcuadros/go-syslog.v2/internal/syslogparser"
 )
 
+type LogParts syslogparser.LogParts
+
 //The handler receive every syslog entry at Handle method
 type Handler interface {
-	Handle(syslogparser.LogParts, int64, error)
+	Handle(LogParts, int64, error)
 }
 
-type LogPartsChannel chan syslogparser.LogParts
+type LogPartsChannel chan LogParts
 
 //The ChannelHandler will send all the syslog entries into the given channel
 type ChannelHandler struct {
@@ -30,6 +32,6 @@ func (h *ChannelHandler) SetChannel(channel LogPartsChannel) {
 }
 
 //Syslog entry receiver
-func (h *ChannelHandler) Handle(logParts syslogparser.LogParts, messageLength int64, err error) {
+func (h *ChannelHandler) Handle(logParts LogParts, messageLength int64, err error) {
 	h.channel <- logParts
 }

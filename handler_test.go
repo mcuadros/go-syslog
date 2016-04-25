@@ -2,7 +2,6 @@ package syslog
 
 import (
 	. "gopkg.in/check.v1"
-	"gopkg.in/mcuadros/go-syslog.v2/internal/syslogparser"
 )
 
 type HandlerSuite struct{}
@@ -10,7 +9,7 @@ type HandlerSuite struct{}
 var _ = Suite(&HandlerSuite{})
 
 func (s *HandlerSuite) TestHandle(c *C) {
-	logPart := syslogparser.LogParts{"tag": "foo"}
+	logPart := LogParts{"tag": "foo"}
 
 	channel := make(LogPartsChannel, 1)
 	handler := NewChannelHandler(channel)
