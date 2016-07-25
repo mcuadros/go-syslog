@@ -8,6 +8,7 @@ import (
 	"time"
 
 	. "gopkg.in/check.v1"
+	"gopkg.in/mcuadros/go-syslog.v2/format"
 )
 
 func Test(t *testing.T) { TestingT(t) }
@@ -50,12 +51,12 @@ func (s *ServerSuite) TestTailFile(c *C) {
 }
 
 type HandlerMock struct {
-	LastLogParts      LogParts
+	LastLogParts      format.LogParts
 	LastMessageLength int64
 	LastError         error
 }
 
-func (s *HandlerMock) Handle(logParts LogParts, msgLen int64, err error) {
+func (s *HandlerMock) Handle(logParts format.LogParts, msgLen int64, err error) {
 	s.LastLogParts = logParts
 	s.LastMessageLength = msgLen
 	s.LastError = err
