@@ -45,6 +45,30 @@ func (s *FormatSuite) TestRFC6587_GetSplitFuncMultiSplit(c *C) {
 	c.Assert(i, Equals, len(find))
 }
 
+func (s *FormatSuite) TestRFC6587_GetSplitFuncMultiSplitNonTransparentFraming(c *C) {
+	f := RFC6587{}
+
+	find := []string{
+		"<1> I am a test.",
+		"<2> I am a test 2.",
+		"<3> hahahah",
+	}
+	buf := new(bytes.Buffer)
+	for _, i := range find {
+		fmt.Fprintf(buf, "%s", i)
+	}
+	scanner := bufio.NewScanner(buf)
+	scanner.Split(f.GetSplitFunc())
+
+	i := 0
+	for scanner.Scan() {
+		c.Assert(scanner.Text(), Equals, strings.Join(find, ""))
+		i++
+	}
+
+	c.Assert(i, Equals, 1)
+}
+
 func (s *FormatSuite) TestRFC6587_GetSplitBadSplit(c *C) {
 	f := RFC6587{}
 
