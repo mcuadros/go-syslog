@@ -319,8 +319,8 @@ func (s *Server) goReceiveDatagrams(packetconn net.PacketConn) {
 	s.wait.Add(1)
 	go func() {
 		defer s.wait.Done()
+		buf := make([]byte, 65536)
 		for {
-			buf := make([]byte, 65536)
 			n, addr, err := packetconn.ReadFrom(buf)
 			if err == nil {
 				// Ignore trailing control characters and NULs
