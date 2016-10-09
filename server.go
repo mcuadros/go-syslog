@@ -30,7 +30,7 @@ type TlsPeerNameFunc func(tlsConn *tls.Conn) (tlsPeer string, ok bool)
 
 type Server struct {
 	listeners               []net.Listener
-	connections             []net.Conn
+	connections             []net.PacketConn
 	wait                    sync.WaitGroup
 	doneTcp                 chan bool
 	datagramChannel         chan DatagramMessage
@@ -315,16 +315,12 @@ type DatagramMessage struct {
 	client  string
 }
 
-func (s *Server) goReceiveDatagrams(connection net.Conn) {
-	packetconn, ok := connection.(net.PacketConn)
-	if !ok {
-		panic("Connection is not a packet connection")
-	}
+func (s *Server) goReceiveDatagrams(packetconn net.PacketConn) {
 	s.wait.Add(1)
 	go func() {
 		defer s.wait.Done()
+		buf := make([]byte, 65536)
 		for {
-			buf := make([]byte, 65536)
 			n, addr, err := packetconn.ReadFrom(buf)
 			if err == nil {
 				// Ignore trailing control characters and NULs
