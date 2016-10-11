@@ -271,3 +271,58 @@ func (s *ServerSuite) TestUDPAutomatic5424Plus6587OctetCount(c *C) {
 	c.Check(handler.LastMessageLength, Equals, int64(len(exampleRFC5424Syslog)))
 	c.Check(handler.LastError, IsNil)
 }
+
+type handlerSlow struct {
+	*handlerCounter
+	contents []string
+}
+
+func (s *handlerSlow) Handle(logParts format.LogParts, msgLen int64, err error) {
+	if len(s.contents) == 0 {
+		time.Sleep(time.Second)
+	}
+	s.contents = append(s.contents, logParts["content"].(string))
+	s.handlerCounter.Handle(logParts, msgLen, err)
+}
+
+func (s *ServerSuite) TestUDPRace(c *C) {
+	handler := &handlerSlow{handlerCounter: &handlerCounter{expected: 3, done: make(chan struct{})}}
+	server := NewServer()
+	server.SetFormat(Automatic)
+	server.SetHandler(handler)
+	server.SetTimeout(10)
+	server.ListenUDP("127.0.0.1:0")
+	server.Boot()
+	conn, err := net.Dial("udp", server.connections[0].LocalAddr().String())
+	c.Assert(err, IsNil)
+	_, err = conn.Write([]byte(exampleSyslog + "1"))
+	c.Assert(err, IsNil)
+	_, err = conn.Write([]byte(exampleSyslog + "2"))
+	c.Assert(err, IsNil)
+	_, err = conn.Write([]byte(exampleSyslog + "3"))
+	c.Assert(err, IsNil)
+	conn.Close()
+	<-handler.done
+	c.Check(handler.contents, DeepEquals, []string{"content1", "content2", "content3"})
+}
+
+func (s *ServerSuite) TestTCPRace(c *C) {
+	handler := &handlerSlow{handlerCounter: &handlerCounter{expected: 3, done: make(chan struct{})}}
+	server := NewServer()
+	server.SetFormat(Automatic)
+	server.SetHandler(handler)
+	server.SetTimeout(10)
+	server.ListenTCP("127.0.0.1:0")
+	server.Boot()
+	conn, err := net.Dial("tcp", server.listeners[0].Addr().String())
+	c.Assert(err, IsNil)
+	_, err = conn.Write([]byte(exampleSyslog + "1\n"))
+	c.Assert(err, IsNil)
+	_, err = conn.Write([]byte(exampleSyslog + "2\n"))
+	c.Assert(err, IsNil)
+	_, err = conn.Write([]byte(exampleSyslog + "3\n"))
+	c.Assert(err, IsNil)
+	conn.Close()
+	<-handler.done
+	c.Check(handler.contents, DeepEquals, []string{"content1", "content2", "content3"})
+}

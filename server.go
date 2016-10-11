@@ -39,11 +39,16 @@ type Server struct {
 	lastError               error
 	readTimeoutMilliseconds int64
 	tlsPeerNameFunc         TlsPeerNameFunc
+	datagramPool            sync.Pool
 }
 
 //NewServer returns a new Server
 func NewServer() *Server {
-	return &Server{tlsPeerNameFunc: defaultTlsPeerName}
+	return &Server{tlsPeerNameFunc: defaultTlsPeerName, datagramPool: sync.Pool{
+		New: func() interface{} {
+			return make([]byte, 65536)
+		},
+	}}
 }
 
 //Sets the syslog format (RFC3164 or RFC5424 or RFC6587)
@@ -319,8 +324,8 @@ func (s *Server) goReceiveDatagrams(packetconn net.PacketConn) {
 	s.wait.Add(1)
 	go func() {
 		defer s.wait.Done()
-		buf := make([]byte, 65536)
 		for {
+			buf := s.datagramPool.Get().([]byte)
 			n, addr, err := packetconn.ReadFrom(buf)
 			if err == nil {
 				// Ignore trailing control characters and NULs
@@ -366,6 +371,7 @@ func (s *Server) goParseDatagrams() {
 				} else {
 					s.parser(msg.message, msg.client, "")
 				}
+				s.datagramPool.Put(msg.message[:cap(msg.message)])
 			}
 		}
 	}()
