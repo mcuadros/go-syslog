@@ -13,10 +13,10 @@ matrix:
 install:
  - rm -rf $GOPATH/src/gopkg.in/mcuadros
  - mkdir -p $GOPATH/src/gopkg.in/mcuadros
- - ln -s $PWD $GOPATH/src/gopkg.in/mcuadros/go-syslog.v2
- - cd $GOPATH/src/gopkg.in/mcuadros/go-syslog.v2 && go get -v -t ./...
+ - ln -s $PWD $GOPATH/src/github.com/RenaultAI/go-syslog
+ - cd $GOPATH/src/github.com/RenaultAI/go-syslog && go get -v -t ./...
  
 script:
- - cd $GOPATH/src/gopkg.in/mcuadros/go-syslog.v2 && go test -v ./...
+ - cd $GOPATH/src/github.com/RenaultAI/go-syslog && go test -v ./...
  
 sudo: false
