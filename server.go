@@ -283,6 +283,7 @@ func (s *Server) Kill() error {
 			return err
 		}
 	}
+	s.connections = []net.PacketConn{}
 
 	for _, listener := range s.listeners {
 		err := listener.Close()
@@ -290,6 +291,8 @@ func (s *Server) Kill() error {
 			return err
 		}
 	}
+	s.listeners = []net.Listener{}
+
 	// Only need to close channel once to broadcast to all waiting
 	if s.doneTcp != nil {
 		close(s.doneTcp)
