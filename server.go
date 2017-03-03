@@ -228,25 +228,25 @@ func (s *Server) goScanConnection(connection net.Conn) {
 }
 
 func (s *Server) scan(scanCloser *ScanCloser, client string, tlsPeer string) {
-loop:
+	defer s.wait.Done()
+	defer scanCloser.closer.Close()
 	for {
-		select {
-		case <-s.doneTcp:
-			break loop
-		default:
-		}
 		if s.readTimeoutMilliseconds > 0 {
 			scanCloser.closer.SetReadDeadline(time.Now().Add(time.Duration(s.readTimeoutMilliseconds) * time.Millisecond))
 		}
 		if scanCloser.Scan() {
+			// check in case scan took forever
+			select {
+			case <-s.doneTcp:
+				return
+			default:
+			}
 			s.parser([]byte(scanCloser.Text()), client, tlsPeer)
 		} else {
-			break loop
+			return
 		}
 	}
-	scanCloser.closer.Close()
 
-	s.wait.Done()
 }
 
 func (s *Server) parser(line []byte, client string, tlsPeer string) {
