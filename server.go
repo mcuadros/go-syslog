@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"net"
 	"strings"
 	"sync"
@@ -32,7 +33,8 @@ type Server struct {
 	listeners               []net.Listener
 	connections             []net.PacketConn
 	wait                    sync.WaitGroup
-	doneTcp                 chan bool
+	stop                    chan struct{}
+	done                    chan struct{}
 	datagramChannel         chan DatagramMessage
 	format                  format.Format
 	handler                 Handler
@@ -127,7 +129,8 @@ func (s *Server) ListenTCP(addr string) error {
 		return err
 	}
 
-	s.doneTcp = make(chan bool)
+	s.stop = make(chan struct{})
+	s.done = make(chan struct{})
 	s.listeners = append(s.listeners, listener)
 	return nil
 }
@@ -139,7 +142,8 @@ func (s *Server) ListenTCPTLS(addr string, config *tls.Config) error {
 		return err
 	}
 
-	s.doneTcp = make(chan bool)
+	s.stop = make(chan struct{})
+	s.done = make(chan struct{})
 	s.listeners = append(s.listeners, listener)
 	return nil
 }
@@ -175,7 +179,8 @@ func (s *Server) goAcceptConnection(listener net.Listener) {
 	loop:
 		for {
 			select {
-			case <-s.doneTcp:
+			case <-s.stop:
+				fmt.Printf("stop accepting\n")
 				break loop
 			default:
 			}
@@ -237,7 +242,8 @@ func (s *Server) scan(scanCloser *ScanCloser, client string, tlsPeer string) {
 		if scanCloser.Scan() {
 			// check in case scan took forever
 			select {
-			case <-s.doneTcp:
+			case <-s.stop:
+				fmt.Printf("stop scanning\n")
 				return
 			default:
 			}
@@ -294,9 +300,17 @@ func (s *Server) Kill() error {
 	s.listeners = []net.Listener{}
 
 	// Only need to close channel once to broadcast to all waiting
-	if s.doneTcp != nil {
-		close(s.doneTcp)
+	fmt.Printf("stop: %+v\n", s.stop)
+	if s.stop != nil {
+		fmt.Printf("close stop\n")
+		close(s.stop)
 	}
+
+	// Wait until receivers have acknowledged before tearing down the rest
+	fmt.Printf("wait\n")
+	<-s.done
+	fmt.Printf("done waiting\n")
+
 	if s.datagramChannel != nil {
 		close(s.datagramChannel)
 	}
@@ -328,6 +342,14 @@ func (s *Server) goReceiveDatagrams(packetconn net.PacketConn) {
 	go func() {
 		defer s.wait.Done()
 		for {
+			select {
+			case <-s.stop:
+				fmt.Printf("stop receiving\n")
+				close(s.done)
+				return
+			default:
+			}
+
 			buf := s.datagramPool.Get().([]byte)
 			n, addr, err := packetconn.ReadFrom(buf)
 			if err == nil {
