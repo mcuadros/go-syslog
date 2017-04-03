@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"time"
 
-	"gopkg.in/mcuadros/go-syslog.v2/internal/syslogparser"
+	"github.com/RenaultAI/go-syslog/internal/syslogparser"
 )
 
 type Parser struct {
@@ -34,7 +34,7 @@ func NewParser(buff []byte) *Parser {
 		buff:     buff,
 		cursor:   0,
 		l:        len(buff),
-		location: time.UTC,
+		location: time.Local,
 	}
 }
 

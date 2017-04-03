@@ -73,6 +73,7 @@ func (s *ServerSuite) TestTLS(c *C) {
 		if _, err := io.WriteString(conn, fmt.Sprintf("%s\n", exampleSyslog)); err != nil {
 			panic(err)
 		}
+		time.Sleep(10 * time.Millisecond) // sleep to handle message async
 		server.Kill()
 	}(server)
 	server.Wait()
