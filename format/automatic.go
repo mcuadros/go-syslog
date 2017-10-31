@@ -56,10 +56,10 @@ func detect(data []byte) (detected int, err error) {
 	return detectedUnknown, nil
 }
 
-func (f *Automatic) GetParser(line []byte) LogParser {
+func (f *Automatic) getAnyParser(line []byte, isUnixSocket bool) LogParser {
 	switch format, _ := detect(line); format {
 	case detectedRFC3164:
-		return &parserWrapper{rfc3164.NewParser(line)}
+		return &parserWrapper{rfc3164.NewParser(line, isUnixSocket)}
 	case detectedRFC5424:
 		return &parserWrapper{rfc5424.NewParser(line)}
 	default:
@@ -69,8 +69,16 @@ func (f *Automatic) GetParser(line []byte) LogParser {
 		// will return detectedRFC6587. The line may also simply be malformed after the length in
 		// which case we will have detectedUnknown. In this case we return the simplest parser so
 		// the illegally formatted line is properly handled
-		return &parserWrapper{rfc3164.NewParser(line)}
+		return &parserWrapper{rfc3164.NewParser(line, isUnixSocket)}
 	}
+}
+
+func (f *Automatic) GetParser(line []byte) LogParser {
+	return f.getAnyParser(line, false)
+}
+
+func (f *Automatic) GetParserUnixSocket(line []byte) LogParser {
+	return f.getAnyParser(line, true)
 }
 
 func (f *Automatic) GetSplitFunc() bufio.SplitFunc {

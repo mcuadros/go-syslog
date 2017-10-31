@@ -17,6 +17,7 @@ type LogParser interface {
 
 type Format interface {
 	GetParser([]byte) LogParser
+	GetParserUnixSocket([]byte) LogParser
 	GetSplitFunc() bufio.SplitFunc
 }
 

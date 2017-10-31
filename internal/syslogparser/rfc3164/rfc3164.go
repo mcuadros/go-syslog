@@ -8,15 +8,16 @@ import (
 )
 
 type Parser struct {
-	buff     []byte
-	cursor   int
-	l        int
-	priority syslogparser.Priority
-	version  int
-	header   header
-	message  rfc3164message
-	location *time.Location
-	skipTag  bool
+	buff         []byte
+	cursor       int
+	l            int
+	priority     syslogparser.Priority
+	version      int
+	header       header
+	message      rfc3164message
+	location     *time.Location
+	skipTag      bool
+	skipHostname bool
 }
 
 type header struct {
@@ -29,12 +30,13 @@ type rfc3164message struct {
 	content string
 }
 
-func NewParser(buff []byte) *Parser {
+func NewParser(buff []byte, skipHostname bool) *Parser {
 	return &Parser{
-		buff:     buff,
-		cursor:   0,
-		l:        len(buff),
-		location: time.UTC,
+		buff:         buff,
+		cursor:       0,
+		l:            len(buff),
+		location:     time.UTC,
+		skipHostname: skipHostname,
 	}
 }
 
@@ -186,6 +188,9 @@ func (p *Parser) parseTimestamp() (time.Time, error) {
 }
 
 func (p *Parser) parseHostname() (string, error) {
+	if p.skipHostname {
+		return "", nil
+	}
 	return syslogparser.ParseHostname(p.buff, &p.cursor, p.l)
 }
 
