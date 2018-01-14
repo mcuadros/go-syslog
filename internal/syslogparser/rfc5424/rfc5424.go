@@ -579,7 +579,7 @@ func parseUpToLen(buff []byte, cursor *int, l int, maxLen int, e error) (string,
 
 	max := *cursor + maxLen
 
-	for to = *cursor; (to < max) && (to < l); to++ {
+	for to = *cursor; (to <= max) && (to < l); to++ {
 		if buff[to] == ' ' {
 			found = true
 			break
@@ -588,6 +588,8 @@ func parseUpToLen(buff []byte, cursor *int, l int, maxLen int, e error) (string,
 
 	if found {
 		result = string(buff[*cursor:to])
+	} else if (to > max) {
+		to = max; // don't go past max
 	}
 
 	*cursor = to

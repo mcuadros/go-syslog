@@ -22,6 +22,7 @@ func (s *Rfc5424TestSuite) TestParser_Valid(c *C) {
 		// no STRUCTURED-DATA
 		"<34>1 2003-10-11T22:14:15.003Z mymachine.example.com su - ID47 - 'su root' failed for lonvick on /dev/pts/8",
 		"<165>1 2003-08-24T05:14:15.000003-07:00 192.0.2.1 myproc 8710 - - %% It's time to make the do-nuts.",
+		"<165>1 2003-08-24T05:14:15.000003-07:00 192.0.2.1 012345678901234567890123456789012345678901234567 8710 - - %% It's time to make the do-nuts.",
 		// with STRUCTURED-DATA
 		`<165>1 2003-10-11T22:14:15.003Z mymachine.example.com evntslog - ID47 [exampleSDID@32473 iut="3" eventSource="Application" eventID="1011"] An application event log entry...`,
 		// STRUCTURED-DATA Only
@@ -55,6 +56,19 @@ func (s *Rfc5424TestSuite) TestParser_Valid(c *C) {
 			"timestamp":       time.Date(2003, time.August, 24, 5, 14, 15, 3*10e2, tmpTs.Location()),
 			"hostname":        "192.0.2.1",
 			"app_name":        "myproc",
+			"proc_id":         "8710",
+			"msg_id":          "-",
+			"structured_data": "-",
+			"message":         "%% It's time to make the do-nuts.",
+		},
+		syslogparser.LogParts{
+			"priority":        165,
+			"facility":        20,
+			"severity":        5,
+			"version":         1,
+			"timestamp":       time.Date(2003, time.August, 24, 5, 14, 15, 3*10e2, tmpTs.Location()),
+			"hostname":        "192.0.2.1",
+			"app_name":        "012345678901234567890123456789012345678901234567",
 			"proc_id":         "8710",
 			"msg_id":          "-",
 			"structured_data": "-",
@@ -684,7 +698,7 @@ func (s *Rfc5424TestSuite) TestParseMsgId_Valid(c *C) {
 
 func (s *Rfc5424TestSuite) TestParseMsgId_TooLong(c *C) {
 	// > 32chars
-	buff := []byte("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ")
+	buff := []byte("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ")
 	procId := ""
 
 	s.assertParseMsgId(c, procId, buff, 32, ErrInvalidMsgId)
