@@ -85,5 +85,5 @@ func (s *FormatSuite) TestRFC6587_GetSplitBadSplit(c *C) {
 	c.Assert(r, NotNil)
 
 	err := scanner.Err()
-	c.Assert(err, ErrorMatches, "strconv.ParseInt: parsing \".2\": invalid syntax")
+	c.Assert(err, ErrorMatches, "strconv.*: parsing \".2\": invalid syntax")
 }
