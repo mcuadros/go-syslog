@@ -130,6 +130,46 @@ func (s *Rfc3164TestSuite) TestParseHeader_Valid(c *C) {
 	}
 
 	s.assertRfc3164Header(c, hdr, buff, 25, nil)
+
+	// expected header for next two tests
+	hdr = header{
+		timestamp: time.Date(now.Year(), time.October, 1, 22, 14, 15, 0, time.UTC),
+		hostname:  "mymachine",
+	}
+	// day with leading zero
+	buff = []byte("Oct 01 22:14:15 mymachine ")
+	s.assertRfc3164Header(c, hdr, buff, 25, nil)
+	// day with leading space
+	buff = []byte("Oct  1 22:14:15 mymachine ")
+	s.assertRfc3164Header(c, hdr, buff, 25, nil)
+
+}
+
+func (s *Rfc3164TestSuite) TestParseHeader_RFC3339Timestamp(c *C) {
+	buff := []byte("2018-01-12T22:14:15+00:00 mymachine app[101]: msg")
+	hdr := header{
+		timestamp: time.Date(2018, time.January, 12, 22, 14, 15, 0, time.UTC),
+		hostname:  "mymachine",
+	}
+	s.assertRfc3164Header(c, hdr, buff, 35, nil)
+}
+
+func (s *Rfc3164TestSuite) TestParser_ValidRFC3339Timestamp(c *C) {
+	buff := []byte("<34>2018-01-12T22:14:15+00:00 mymachine app[101]: msg")
+	p := NewParser(buff)
+	err := p.Parse()
+	c.Assert(err, IsNil)
+	obtained := p.Dump()
+	expected := syslogparser.LogParts{
+		"timestamp": time.Date(2018, time.January, 12, 22, 14, 15, 0, time.UTC),
+		"hostname":  "mymachine",
+		"tag":       "app",
+		"content":   "msg",
+		"priority":  34,
+		"facility":  4,
+		"severity":  2,
+	}
+	c.Assert(obtained, DeepEquals, expected)
 }
 
 func (s *Rfc3164TestSuite) TestParseHeader_InvalidTimestamp(c *C) {

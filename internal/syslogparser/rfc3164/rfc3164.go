@@ -142,8 +142,16 @@ func (p *Parser) parseTimestamp() (time.Time, error) {
 	var sub []byte
 
 	tsFmts := []string{
-		"Jan 02 15:04:05",
-		"Jan  2 15:04:05",
+		time.Stamp,
+		time.RFC3339,
+	}
+	// if timestamps starts with numeric try formats with different order
+	// it is more likely that timestamp is in RFC3339 format then
+	if c := p.buff[p.cursor]; c > '0' && c < '9' {
+		tsFmts = []string{
+			time.RFC3339,
+			time.Stamp,
+		}
 	}
 
 	found := false
@@ -163,7 +171,7 @@ func (p *Parser) parseTimestamp() (time.Time, error) {
 	}
 
 	if !found {
-		p.cursor = tsFmtLen
+		p.cursor = len(time.Stamp)
 
 		// XXX : If the timestamp is invalid we try to push the cursor one byte
 		// XXX : further, in case it is a space
