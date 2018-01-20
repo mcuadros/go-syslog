@@ -250,7 +250,14 @@ loop:
 }
 
 func (s *Server) parser(line []byte, client string, tlsPeer string) {
-	parser := s.format.GetParser(line)
+	var parser format.LogParser
+
+	if client == "" {
+		parser = s.format.GetParserUnixSocket(line)
+	} else {
+		parser = s.format.GetParser(line)
+	}
+
 	err := parser.Parse()
 	if err != nil {
 		s.lastError = err

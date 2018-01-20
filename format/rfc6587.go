@@ -14,6 +14,10 @@ func (f *RFC6587) GetParser(line []byte) LogParser {
 	return &parserWrapper{rfc5424.NewParser(line)}
 }
 
+func (f *RFC6587) GetParserUnixSocket(line []byte) LogParser {
+	return f.GetParser(line)
+}
+
 func (f *RFC6587) GetSplitFunc() bufio.SplitFunc {
 	return rfc6587ScannerSplit
 }

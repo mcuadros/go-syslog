@@ -9,7 +9,11 @@ import (
 type RFC3164 struct{}
 
 func (f *RFC3164) GetParser(line []byte) LogParser {
-	return &parserWrapper{rfc3164.NewParser(line)}
+	return &parserWrapper{rfc3164.NewParser(line, false)}
+}
+
+func (f *RFC3164) GetParserUnixSocket(line []byte) LogParser {
+	return &parserWrapper{rfc3164.NewParser(line, true)}
 }
 
 func (f *RFC3164) GetSplitFunc() bufio.SplitFunc {
