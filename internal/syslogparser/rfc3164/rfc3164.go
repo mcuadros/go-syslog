@@ -26,6 +26,7 @@ type header struct {
 
 type rfc3164message struct {
 	tag     string
+	pid     string
 	content string
 }
 
@@ -82,6 +83,7 @@ func (p *Parser) Dump() syslogparser.LogParts {
 		"hostname":  p.header.hostname,
 		"tag":       p.message.tag,
 		"content":   p.message.content,
+		"pid":       p.message.pid,
 		"priority":  p.priority.P,
 		"facility":  p.priority.F.Value,
 		"severity":  p.priority.S.Value,
@@ -117,11 +119,12 @@ func (p *Parser) parsemessage() (rfc3164message, error) {
 	var err error
 
 	if !p.skipTag {
-		tag, err := p.parseTag()
+		tag, pid, err := p.parseTag()
 		if err != nil {
 			return msg, err
 		}
 		msg.tag = tag
+		msg.pid = pid
 	}
 
 	content, err := p.parseContent()
@@ -198,31 +201,39 @@ func (p *Parser) parseHostname() (string, error) {
 }
 
 // http://tools.ietf.org/html/rfc3164#section-4.1.3
-func (p *Parser) parseTag() (string, error) {
+func (p *Parser) parseTag() (string, string, error) {
 	var b byte
 	var endOfTag bool
 	var bracketOpen bool
+	var bracketClosed bool
 	var tag []byte
+	var pid []byte
 	var err error
 	var found bool
 
 	from := p.cursor
+	pidFrom := 0
 
 	for {
 		if p.cursor == p.l {
 			// no tag found, reset cursor for content
 			p.cursor = from
-			return "", nil
+			return "", "", nil
 		}
 
 		b = p.buff[p.cursor]
 		bracketOpen = (b == '[')
+		bracketClosed = (b == ']')
 		endOfTag = (b == ':' || b == ' ')
 
-		// XXX : parse PID ?
 		if bracketOpen {
 			tag = p.buff[from:p.cursor]
 			found = true
+			pidFrom = p.cursor + 1
+		}
+		
+		if bracketClosed {
+			pid = p.buff[pidFrom:p.cursor]
 		}
 
 		if endOfTag {
@@ -242,7 +253,11 @@ func (p *Parser) parseTag() (string, error) {
 		p.cursor++
 	}
 
-	return string(tag), err
+	if pidFrom == 0 { // No PID found
+		pid = []byte{}
+	}
+
+	return string(tag), string(pid), err
 }
 
 func (p *Parser) parseContent() (string, error) {

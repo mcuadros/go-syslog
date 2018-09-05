@@ -233,29 +233,30 @@ func (s *Rfc3164TestSuite) TestParseTimestamp_Valid(c *C) {
 func (s *Rfc3164TestSuite) TestParseTag_Pid(c *C) {
 	buff := []byte("apache2[10]:")
 	tag := "apache2"
+	pid := "10"
 
-	s.assertTag(c, tag, buff, len(buff), nil)
+	s.assertTag(c, tag, pid, buff, len(buff), nil)
 }
 
 func (s *Rfc3164TestSuite) TestParseTag_NoPid(c *C) {
 	buff := []byte("apache2:")
 	tag := "apache2"
 
-	s.assertTag(c, tag, buff, len(buff), nil)
+	s.assertTag(c, tag, "", buff, len(buff), nil)
 }
 
 func (s *Rfc3164TestSuite) TestParseTag_TrailingSpace(c *C) {
 	buff := []byte("apache2: ")
 	tag := "apache2"
 
-	s.assertTag(c, tag, buff, len(buff), nil)
+	s.assertTag(c, tag, "", buff, len(buff), nil)
 }
 
 func (s *Rfc3164TestSuite) TestParseTag_NoTag(c *C) {
 	buff := []byte("apache2")
 	tag := ""
 
-	s.assertTag(c, tag, buff, 0, nil)
+	s.assertTag(c, tag, "", buff, 0, nil)
 }
 
 func (s *Rfc3164TestSuite) TestParseContent_Valid(c *C) {
@@ -352,10 +353,11 @@ func (s *Rfc3164TestSuite) assertTimestamp(c *C, ts time.Time, b []byte, expC in
 	c.Assert(err, Equals, e)
 }
 
-func (s *Rfc3164TestSuite) assertTag(c *C, t string, b []byte, expC int, e error) {
+func (s *Rfc3164TestSuite) assertTag(c *C, t string, p string, b []byte, expC int, e error) {
 	p := NewParser(b)
-	obtained, err := p.parseTag()
+	obtained, obtainedPid, err := p.parseTag()
 	c.Assert(obtained, Equals, t)
+	c.Assert(obtainedPid, Equals, p)
 	c.Assert(p.cursor, Equals, expC)
 	c.Assert(err, Equals, e)
 }
