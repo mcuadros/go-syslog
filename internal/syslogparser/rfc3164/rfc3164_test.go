@@ -46,6 +46,7 @@ func (s *Rfc3164TestSuite) TestParser_Valid(c *C) {
 		"timestamp": time.Date(now.Year(), time.October, 11, 22, 14, 15, 0, time.UTC),
 		"hostname":  "mymachine",
 		"tag":       "very.large.syslog.message.tag",
+		"pid":       "",
 		"content":   "'su root' failed for lonvick on /dev/pts/8",
 		"priority":  34,
 		"facility":  4,
@@ -78,6 +79,7 @@ func (s *Rfc3164TestSuite) TestParser_ValidNoTag(c *C) {
 		"timestamp": time.Date(now.Year(), time.October, 11, 22, 14, 15, 0, time.UTC),
 		"hostname":  "mymachine",
 		"tag":       "",
+		"pid":       "",
 		"content":   "singleword",
 		"priority":  34,
 		"facility":  4,
@@ -112,6 +114,7 @@ func (s *Rfc3164TestSuite) TestParser_NoTimestamp(c *C) {
 		"timestamp": now,
 		"hostname":  "",
 		"tag":       "",
+		"pid":       "",
 		"content":   "INFO     leaving (1) step postscripts",
 		"priority":  14,
 		"facility":  1,
@@ -164,6 +167,7 @@ func (s *Rfc3164TestSuite) TestParser_ValidRFC3339Timestamp(c *C) {
 		"timestamp": time.Date(2018, time.January, 12, 22, 14, 15, 0, time.UTC),
 		"hostname":  "mymachine",
 		"tag":       "app",
+		"pid":       "101",
 		"content":   "msg",
 		"priority":  34,
 		"facility":  4,
@@ -184,6 +188,7 @@ func (s *Rfc3164TestSuite) TestParsemessage_Valid(c *C) {
 	buff := []byte("sometag[123]: " + content)
 	hdr := rfc3164message{
 		tag:     "sometag",
+		pid:     "123",
 		content: content,
 	}
 
