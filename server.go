@@ -336,7 +336,12 @@ func (s *Server) goReceiveDatagrams(packetconn net.PacketConn) {
 					if addr != nil {
 						address = addr.String()
 					}
-					s.datagramChannel <- DatagramMessage{buf[:n], address}
+					func() { // Ensure server does not panic on close channel when Kill() is called
+						defer func() {
+							recover()
+						}()
+						s.datagramChannel <- DatagramMessage{buf[:n], address}
+					}()
 				}
 			} else {
 				// there has been an error. Either the server has been killed
