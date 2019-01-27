@@ -43,12 +43,21 @@ func (p *Parser) Location(location *time.Location) {
 }
 
 func (p *Parser) Parse() error {
+	tcursor := p.cursor
 	pri, err := p.parsePriority()
 	if err != nil {
-		return err
+		// RFC3164 sec 4.3.3
+		p.priority = syslogparser.Priority{13, syslogparser.Facility{Value: 1}, syslogparser.Severity{Value: 5}}
+		p.cursor = tcursor
+		content, err := p.parseContent()
+		if err != syslogparser.ErrEOL {
+			return err
+		}
+		p.message = rfc3164message{content: content}
+		return nil
 	}
 
-	tcursor := p.cursor
+	tcursor = p.cursor
 	hdr, err := p.parseHeader()
 	if err == syslogparser.ErrTimestampUnknownFormat {
 		// RFC3164 sec 4.3.2.
