@@ -107,6 +107,10 @@ func (s *Rfc3164TestSuite) TestParser_NoTimestamp(c *C) {
 	now := time.Now()
 
 	obtained := p.Dump()
+
+	obtainedTime := obtained["timestamp"].(time.Time)
+	s.assertTimeIsCloseToNow(c, obtainedTime)
+
 	obtained["timestamp"] = now // XXX: Need to mock out time to test this fully
 	expected := syslogparser.LogParts{
 		"timestamp": now,
@@ -141,6 +145,9 @@ func (s *Rfc3164TestSuite) TestParser_NoPriority(c *C) {
 	now := time.Now()
 
 	obtained := p.Dump()
+	obtainedTime := obtained["timestamp"].(time.Time)
+	s.assertTimeIsCloseToNow(c, obtainedTime)
+
 	obtained["timestamp"] = now // XXX: Need to mock out time to test this fully
 	expected := syslogparser.LogParts{
 		"timestamp": now,
@@ -408,4 +415,12 @@ func (s *Rfc3164TestSuite) assertRfc3164message(c *C, msg rfc3164message, b []by
 	c.Assert(err, Equals, e)
 	c.Assert(obtained, Equals, msg)
 	c.Assert(p.cursor, Equals, expC)
+}
+
+func (s *Rfc3164TestSuite) assertTimeIsCloseToNow(c *C, obtainedTime time.Time) {
+	now := time.Now()
+	timeStart := now.Add(-(time.Second * 5))
+	timeEnd := now.Add(time.Second)
+	c.Assert(obtainedTime.After(timeStart), Equals, true)
+	c.Assert(obtainedTime.Before(timeEnd), Equals, true)
 }
