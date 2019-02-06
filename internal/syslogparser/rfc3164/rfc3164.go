@@ -50,6 +50,7 @@ func (p *Parser) Parse() error {
 		p.priority = syslogparser.Priority{13, syslogparser.Facility{Value: 1}, syslogparser.Severity{Value: 5}}
 		p.cursor = tcursor
 		content, err := p.parseContent()
+		p.header.timestamp = time.Now().Round(time.Second)
 		if err != syslogparser.ErrEOL {
 			return err
 		}
