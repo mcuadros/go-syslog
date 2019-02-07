@@ -33,6 +33,7 @@ type Server struct {
 	connections             []net.PacketConn
 	wait                    sync.WaitGroup
 	doneTcp                 chan bool
+	datagramChannelSize     int
 	datagramChannel         chan DatagramMessage
 	format                  format.Format
 	handler                 Handler
@@ -48,7 +49,10 @@ func NewServer() *Server {
 		New: func() interface{} {
 			return make([]byte, 65536)
 		},
-	}}
+	},
+
+		datagramChannelSize: datagramChannelBufferSize,
+	}
 }
 
 //Sets the syslog format (RFC3164 or RFC5424 or RFC6587)
@@ -69,6 +73,10 @@ func (s *Server) SetTimeout(millseconds int64) {
 // Set the function that extracts a TLS peer name from the TLS connection
 func (s *Server) SetTlsPeerNameFunc(tlsPeerNameFunc TlsPeerNameFunc) {
 	s.tlsPeerNameFunc = tlsPeerNameFunc
+}
+
+func (s *Server) SetDatagramChannelSize(size int) {
+	s.datagramChannelSize = size
 }
 
 // Default TLS peer name function - returns the CN of the certificate
@@ -353,7 +361,7 @@ func (s *Server) goReceiveDatagrams(packetconn net.PacketConn) {
 }
 
 func (s *Server) goParseDatagrams() {
-	s.datagramChannel = make(chan DatagramMessage, datagramChannelBufferSize)
+	s.datagramChannel = make(chan DatagramMessage, s.datagramChannelSize)
 
 	s.wait.Add(1)
 	go func() {
