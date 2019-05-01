@@ -2,6 +2,7 @@ package rfc3164
 
 import (
 	"bytes"
+	"os"
 	"time"
 
 	"gopkg.in/mcuadros/go-syslog.v2/internal/syslogparser"
@@ -194,7 +195,17 @@ func (p *Parser) parseTimestamp() (time.Time, error) {
 }
 
 func (p *Parser) parseHostname() (string, error) {
-	return syslogparser.ParseHostname(p.buff, &p.cursor, p.l)
+	oldcursor := p.cursor
+	hostname, err := syslogparser.ParseHostname(p.buff, &p.cursor, p.l)
+	if err == nil && len(hostname) > 0 && string(hostname[len(hostname)-1]) == ":" { // not an hostname! we found a GNU implementation of syslog()
+		p.cursor = oldcursor - 1
+		myhostname, err := os.Hostname()
+		if err == nil {
+			return myhostname, nil
+		}
+		return "", nil
+	}
+	return hostname, err
 }
 
 // http://tools.ietf.org/html/rfc3164#section-4.1.3
