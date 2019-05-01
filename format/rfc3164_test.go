@@ -21,6 +21,18 @@ func (s *FormatSuite) TestRFC3164_CorrectParsingTypical(c *C) {
 	c.Assert(parser.Dump()["tag"], Equals, "myprogram")
 
 }
+func (s *FormatSuite) TestRFC3164_CorrectParsingTypicalWithPID(c *C) {
+	f := RFC3164{}
+
+	find := `<13>May  1 20:51:40 myhostname myprogram[42]: ciao`
+	parser := f.GetParser([]byte(find))
+	err := parser.Parse()
+	c.Assert(err, IsNil)
+	c.Assert(parser.Dump()["content"], Equals, "ciao")
+	c.Assert(parser.Dump()["hostname"], Equals, "myhostname")
+	c.Assert(parser.Dump()["tag"], Equals, "myprogram")
+
+}
 
 func (s *FormatSuite) TestRFC3164_CorrectParsingGNU(c *C) {
 	// GNU implementation of syslog() has a variant: hostname is missing
