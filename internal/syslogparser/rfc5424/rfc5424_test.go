@@ -137,6 +137,14 @@ func (s *Rfc5424TestSuite) TestParser_Valid(c *C) {
 	}
 }
 
+func (s *Rfc5424TestSuite) TestParser_Truncated(c *C) {
+	msg := "<165>1 2003-08-24T05:14:15.000003-07:00 192.0.2.1 myproc 8710 - - %% It's time to make the do-nuts."
+	for i := range msg {
+		p := NewParser([]byte(msg[:i]))
+		p.Parse()
+	}
+}
+
 func (s *Rfc5424TestSuite) TestParseHeader_Valid(c *C) {
 	ts := time.Date(2003, time.October, 11, 22, 14, 15, 3*10e5, time.UTC)
 	tsString := "2003-10-11T22:14:15.003Z"
@@ -291,6 +299,13 @@ func (s *Rfc5424TestSuite) TestParseTimestamp_NilValue(c *C) {
 	ts := new(time.Time)
 
 	s.assertTimestamp(c, *ts, buff, 1, nil)
+}
+
+func (s *Rfc5424TestSuite) TestParseTimestamp_Empty(c *C) {
+	buff := []byte("")
+	ts := new(time.Time)
+
+	s.assertTimestamp(c, *ts, buff, 0, ErrInvalidTimeFormat)
 }
 
 func (s *Rfc5424TestSuite) TestFindNextSpace_NoSpace(c *C) {
