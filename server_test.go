@@ -19,6 +19,7 @@ type ServerSuite struct {
 var _ = Suite(&ServerSuite{})
 var exampleSyslog = "<31>Dec 26 05:08:46 hostname tag[296]: content"
 var exampleSyslogNoTSTagHost = "<14>INFO     leaving (1) step postscripts"
+var exampleSyslogNoPriority = "Dec 26 05:08:46 hostname test with no priority - see rfc 3164 section 4.3.3"
 var exampleRFC5424Syslog = "<34>1 2003-10-11T22:14:15.003Z mymachine.example.com su - ID47 - 'su root' failed for lonvick on /dev/pts/8"
 
 func (s *ServerSuite) TestTailFile(c *C) {
@@ -181,6 +182,24 @@ func (s *ServerSuite) TestUDP3164NoTag(c *C) {
 	c.Check(handler.LastLogParts["tag"], Equals, "")
 	c.Check(handler.LastLogParts["content"], Equals, "INFO     leaving (1) step postscripts")
 	c.Check(handler.LastMessageLength, Equals, int64(len(exampleSyslogNoTSTagHost)))
+	c.Check(handler.LastError, IsNil)
+}
+
+func (s *ServerSuite) TestUDPAutomatic3164NoPriority(c *C) {
+	handler := new(HandlerMock)
+	server := NewServer()
+	server.SetFormat(Automatic)
+	server.SetHandler(handler)
+	server.SetTimeout(10)
+	server.goParseDatagrams()
+	server.datagramChannel <- DatagramMessage{[]byte(exampleSyslogNoPriority), "127.0.0.1:45789"}
+	close(server.datagramChannel)
+	server.Wait()
+	c.Check(handler.LastLogParts["hostname"], Equals, "127.0.0.1")
+	c.Check(handler.LastLogParts["tag"], Equals, "")
+	c.Check(handler.LastLogParts["priority"], Equals, 13)
+	c.Check(handler.LastLogParts["content"], Equals, exampleSyslogNoPriority)
+	c.Check(handler.LastMessageLength, Equals, int64(len(exampleSyslogNoPriority)))
 	c.Check(handler.LastError, IsNil)
 }
 
