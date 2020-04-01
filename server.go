@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"net"
 	"strings"
 	"sync"
@@ -100,9 +101,27 @@ func (s *Server) ListenUDP(addr string) error {
 	if err != nil {
 		return err
 	}
-	connection.SetReadBuffer(datagramReadBufferSize)
 
-	s.connections = append(s.connections, connection)
+	return s.listenUDP(connection)
+}
+
+func (s *Server) listenUDP(conn *net.UDPConn) error {
+	conn.SetReadBuffer(datagramReadBufferSize)
+
+	s.connections = append(s.connections, conn)
+	return nil
+}
+
+//ListenOn user defined socket
+func (s *Server) ListenOn(conn interface{}) error {
+	switch c := conn.(type) {
+	case *net.UDPConn:
+		return s.listenUDP(c)
+	case *net.UnixConn:
+		return s.listenUnixgram(c)
+	default:
+		return fmt.Errorf("unknown socket type")
+	}
 	return nil
 }
 
@@ -117,9 +136,14 @@ func (s *Server) ListenUnixgram(addr string) error {
 	if err != nil {
 		return err
 	}
-	connection.SetReadBuffer(datagramReadBufferSize)
 
-	s.connections = append(s.connections, connection)
+	return s.listenUnixgram(connection)
+}
+
+func (s *Server) listenUnixgram(conn *net.UnixConn) error {
+	conn.SetReadBuffer(datagramReadBufferSize)
+
+	s.connections = append(s.connections, conn)
 	return nil
 }
 
