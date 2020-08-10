@@ -15,7 +15,7 @@ matrix:
   allow_failures:
     - go: tip
 
-go_import_path: gopkg.in/mcuadros/go-syslog.v2
+go_import_path: github.com/librato/go-syslog
 
 install:
   - go get -v -t ./...
