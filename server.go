@@ -21,7 +21,7 @@ var (
 
 const (
 	datagramChannelBufferSize = 10
-	datagramReadBufferSize    = 64 * 1024
+	defaultDatagramReadBufferSize = 64 * 1024
 )
 
 // A function type which gets the TLS peer name from the connection. Can return
@@ -41,6 +41,7 @@ type Server struct {
 	readTimeoutMilliseconds int64
 	tlsPeerNameFunc         TlsPeerNameFunc
 	datagramPool            sync.Pool
+	datagramReadBufferSize	int
 }
 
 //NewServer returns a new Server
@@ -52,6 +53,7 @@ func NewServer() *Server {
 	},
 
 		datagramChannelSize: datagramChannelBufferSize,
+		datagramReadBufferSize: defaultDatagramReadBufferSize,
 	}
 }
 
@@ -68,6 +70,11 @@ func (s *Server) SetHandler(handler Handler) {
 //Sets the connection timeout for TCP connections, in milliseconds
 func (s *Server) SetTimeout(millseconds int64) {
 	s.readTimeoutMilliseconds = millseconds
+}
+
+//Sets datagram read buffer size
+func (s *Server) SetDatagramReadBufferSize(size int) {
+	s.datagramReadBufferSize = size
 }
 
 // Set the function that extracts a TLS peer name from the TLS connection
@@ -100,7 +107,7 @@ func (s *Server) ListenUDP(addr string) error {
 	if err != nil {
 		return err
 	}
-	connection.SetReadBuffer(datagramReadBufferSize)
+	connection.SetReadBuffer(s.datagramReadBufferSize)
 
 	s.connections = append(s.connections, connection)
 	return nil
@@ -117,7 +124,7 @@ func (s *Server) ListenUnixgram(addr string) error {
 	if err != nil {
 		return err
 	}
-	connection.SetReadBuffer(datagramReadBufferSize)
+	connection.SetReadBuffer(s.datagramReadBufferSize)
 
 	s.connections = append(s.connections, connection)
 	return nil
