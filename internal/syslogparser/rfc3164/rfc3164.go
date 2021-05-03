@@ -167,7 +167,14 @@ func (p *Parser) parseTimestamp() (time.Time, error) {
 
 	found := false
 	for _, tsFmt := range tsFmts {
-		tsFmtLen = len(tsFmt)
+		if tsFmt == time.RFC3339 {
+			tsFmtLen = bytes.IndexByte(p.buff[p.cursor:], ' ')
+			if tsFmtLen == -1 {
+				continue
+			}
+		} else {
+			tsFmtLen = len(tsFmt)
+		}
 
 		if p.cursor+tsFmtLen > p.l {
 			continue
