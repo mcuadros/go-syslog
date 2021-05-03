@@ -34,6 +34,19 @@ func (s *FormatSuite) TestRFC3164_CorrectParsingTypicalWithPID(c *C) {
 
 }
 
+func (s *FormatSuite) TestRFC3164_CorrectParsingGoSyslogUTC(c *C) {
+	f := RFC3164{}
+	// example of go's builtin syslog logging compiled with 1.16.3 on host using UTC
+	find := "<30>2021-05-02T23:54:09Z myhostname mytag[488]: message"
+	parser := f.GetParser([]byte(find))
+	err := parser.Parse()
+	c.Assert(err, IsNil)
+	c.Assert(parser.Dump()["content"], Equals, "message")
+	c.Assert(parser.Dump()["hostname"], Equals, "myhostname")
+	c.Assert(parser.Dump()["tag"], Equals, "mytag")
+
+}
+
 func (s *FormatSuite) TestRFC3164_CorrectParsingGNU(c *C) {
 	// GNU implementation of syslog() has a variant: hostname is missing
 	f := RFC3164{}
