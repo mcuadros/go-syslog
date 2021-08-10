@@ -40,6 +40,7 @@ type Server struct {
 	readTimeoutMilliseconds int64
 	tlsPeerNameFunc         TlsPeerNameFunc
 	datagramPool            sync.Pool
+	errChannel              chan error
 }
 
 //NewServer returns a new Server
@@ -59,6 +60,11 @@ func (s *Server) SetFormat(f format.Format) {
 //Sets the handler, this handler with receive every syslog entry
 func (s *Server) SetHandler(handler Handler) {
 	s.handler = handler
+}
+
+//Sets a channel for errors
+func (s *Server) SetErrChannel(c chan error) {
+	s.errChannel = c
 }
 
 //Sets the connection timeout for TCP connections, in milliseconds
@@ -181,6 +187,9 @@ func (s *Server) goAcceptConnection(listener net.Listener) {
 			}
 			connection, err := listener.Accept()
 			if err != nil {
+				if s.errChannel != nil {
+					s.errChannel <- &ListenerError{err}
+				}
 				continue
 			}
 
@@ -207,6 +216,9 @@ func (s *Server) goScanConnection(connection net.Conn) {
 	if tlsConn, ok := connection.(*tls.Conn); ok {
 		// Handshake now so we get the TLS peer information
 		if err := tlsConn.Handshake(); err != nil {
+			if s.errChannel != nil {
+				s.errChannel <- &HandshakeError{err, remoteAddr, tlsConn.ConnectionState()}
+			}
 			connection.Close()
 			return
 		}
@@ -241,6 +253,9 @@ loop:
 		if scanCloser.Scan() {
 			s.parser([]byte(scanCloser.Text()), client, tlsPeer)
 		} else {
+			if err := scanCloser.Err(); err != nil && s.errChannel != nil {
+				s.errChannel <- &ScannerError{err, client, tlsPeer}
+			}
 			break loop
 		}
 	}
@@ -254,6 +269,9 @@ func (s *Server) parser(line []byte, client string, tlsPeer string) {
 	err := parser.Parse()
 	if err != nil {
 		s.lastError = err
+		if s.errChannel != nil {
+			s.errChannel <- &ParserError{err}
+		}
 	}
 
 	logParts := parser.Dump()
@@ -375,4 +393,57 @@ func (s *Server) goParseDatagrams() {
 			}
 		}
 	}()
+}
+
+// Error types
+type ListenerError struct {
+	wrappedError error
+}
+
+func (l *ListenerError) Error() string {
+	return l.wrappedError.Error()
+}
+
+func (l *ListenerError) Unwrap() error {
+	return l.wrappedError
+}
+
+type HandshakeError struct {
+	wrappedError    error
+	RemoteAddr      net.Addr
+	ConnectionState tls.ConnectionState
+}
+
+func (l *HandshakeError) Error() string {
+	return l.wrappedError.Error()
+}
+
+func (l *HandshakeError) Unwrap() error {
+	return l.wrappedError
+}
+
+type ScannerError struct {
+	wrappedError error
+	Client       string
+	TLSPeer      string
+}
+
+func (l *ScannerError) Error() string {
+	return l.wrappedError.Error()
+}
+
+func (l *ScannerError) Unwrap() error {
+	return l.wrappedError
+}
+
+type ParserError struct {
+	wrappedError error
+}
+
+func (l *ParserError) Error() string {
+	return l.wrappedError.Error()
+}
+
+func (l *ParserError) Unwrap() error {
+	return l.wrappedError
 }
