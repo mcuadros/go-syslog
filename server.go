@@ -192,7 +192,7 @@ func (s *Server) goAcceptConnection(listener net.Listener) {
 				continue
 			}
 
-			s.goScanConnection(connection)
+			go s.goScanConnection(connection)
 		}
 
 		s.wait.Done()
