@@ -39,6 +39,7 @@ type Server struct {
 	handler                 Handler
 	lastError               error
 	readTimeoutMilliseconds int64
+	tlsHandshakeTimeout     time.Duration
 	tlsPeerNameFunc         TlsPeerNameFunc
 	datagramPool            sync.Pool
 }
@@ -68,6 +69,10 @@ func (s *Server) SetHandler(handler Handler) {
 //Sets the connection timeout for TCP connections, in milliseconds
 func (s *Server) SetTimeout(millseconds int64) {
 	s.readTimeoutMilliseconds = millseconds
+}
+
+func (s *Server) SetTlsHandshakeTimeout(d time.Duration) {
+	s.tlsHandshakeTimeout = d
 }
 
 // Set the function that extracts a TLS peer name from the TLS connection
@@ -214,6 +219,9 @@ func (s *Server) goScanConnection(connection net.Conn) {
 	tlsPeer := ""
 	if tlsConn, ok := connection.(*tls.Conn); ok {
 		// Handshake now so we get the TLS peer information
+		if s.tlsHandshakeTimeout > 0 {
+			tlsConn.SetDeadline(time.Now().Add(s.tlsHandshakeTimeout))
+		}
 		if err := tlsConn.Handshake(); err != nil {
 			connection.Close()
 			return
