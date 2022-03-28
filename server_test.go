@@ -8,7 +8,7 @@ import (
 	"time"
 
 	. "gopkg.in/check.v1"
-	"gopkg.in/mcuadros/go-syslog.v2/format"
+	"gopkg.in/cnaude/go-syslog.v2/format"
 )
 
 func Test(t *testing.T) { TestingT(t) }

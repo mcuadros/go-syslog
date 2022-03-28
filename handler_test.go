@@ -2,7 +2,7 @@ package syslog
 
 import (
 	. "gopkg.in/check.v1"
-	"gopkg.in/mcuadros/go-syslog.v2/format"
+	"gopkg.in/cnaude/go-syslog.v2/format"
 )
 
 type HandlerSuite struct{}

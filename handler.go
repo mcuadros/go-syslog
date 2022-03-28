@@ -1,7 +1,7 @@
 package syslog
 
 import (
-	"gopkg.in/mcuadros/go-syslog.v2/format"
+	"gopkg.in/cnaude/go-syslog.v2/format"
 )
 
 //The handler receive every syslog entry at Handle method
