@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"gopkg.in/cnaude/go-syslog.v2/format"
+	"github.com/cnaude/go-syslog/format"
 )
 
 var (

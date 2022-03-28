@@ -1,7 +1,7 @@
 package syslog
 
 import (
-	"gopkg.in/cnaude/go-syslog.v2/format"
+	"github.com/cnaude/go-syslog/format"
 )
 
 //The handler receive every syslog entry at Handle method
