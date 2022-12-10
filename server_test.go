@@ -2,12 +2,12 @@ package syslog
 
 import (
 	"fmt"
+	"github.com/metajar/go-syslog/format"
+	. "gopkg.in/check.v1"
 	"io"
 	"net"
 	"testing"
 	"time"
-
-	"github.com/metajar/go-syslog/format"
 )
 
 func Test(t *testing.T) { TestingT(t) }
