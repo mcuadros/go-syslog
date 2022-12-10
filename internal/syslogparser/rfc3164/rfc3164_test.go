@@ -2,14 +2,14 @@ package rfc3164
 
 import (
 	"bytes"
+	"github.com/metajar/go-syslog/internal/syslogparser"
+	. "gopkg.in/check.v1"
 	"testing"
 	"time"
-
-	"github.com/metajar/go-syslog/internal/syslogparser"
 )
 
 // Hooks up gocheck into the gotest runner.
-func Test(t *testing.T) { Testing.T(t) }
+func Test(t *testing.T) { TestingT(t) }
 
 type Rfc3164TestSuite struct {
 }

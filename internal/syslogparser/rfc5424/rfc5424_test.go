@@ -2,10 +2,10 @@ package rfc5424
 
 import (
 	"fmt"
+	"github.com/metajar/go-syslog/internal/syslogparser"
+	. "gopkg.in/check.v1"
 	"testing"
 	"time"
-
-	"github.com/metajar/go-syslog/internal/syslogparser"
 )
 
 // Hooks up gocheck into the gotest runner.

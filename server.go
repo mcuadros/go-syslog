@@ -55,22 +55,22 @@ func NewServer() *Server {
 	}
 }
 
-//Sets the syslog format (RFC3164 or RFC5424 or RFC6587)
+// SetFormat Sets the syslog format (RFC3164 or RFC5424 or RFC6587)
 func (s *Server) SetFormat(f format.Format) {
 	s.format = f
 }
 
-//Sets the handler, this handler with receive every syslog entry
+// SetHandler Sets the handler, this handler with receive every syslog entry
 func (s *Server) SetHandler(handler Handler) {
 	s.handler = handler
 }
 
-//Sets the connection timeout for TCP connections, in milliseconds
+// SetTimeout Sets the connection timeout for TCP connections, in milliseconds
 func (s *Server) SetTimeout(millseconds int64) {
 	s.readTimeoutMilliseconds = millseconds
 }
 
-// Set the function that extracts a TLS peer name from the TLS connection
+// SetTlsPeerNameFunc Set the function that extracts a TLS peer name from the TLS connection
 func (s *Server) SetTlsPeerNameFunc(tlsPeerNameFunc TlsPeerNameFunc) {
 	s.tlsPeerNameFunc = tlsPeerNameFunc
 }
@@ -89,7 +89,7 @@ func defaultTlsPeerName(tlsConn *tls.Conn) (tlsPeer string, ok bool) {
 	return cn, true
 }
 
-//Configure the server for listen on an UDP addr
+// ListenUDP Configure the server for listen on an UDP addr
 func (s *Server) ListenUDP(addr string) error {
 	udpAddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
@@ -106,7 +106,7 @@ func (s *Server) ListenUDP(addr string) error {
 	return nil
 }
 
-//Configure the server for listen on an unix socket
+// ListenUnixgram Configure the server for listen on an unix socket
 func (s *Server) ListenUnixgram(addr string) error {
 	unixAddr, err := net.ResolveUnixAddr("unixgram", addr)
 	if err != nil {
@@ -123,7 +123,7 @@ func (s *Server) ListenUnixgram(addr string) error {
 	return nil
 }
 
-//Configure the server for listen on a TCP addr
+// ListenTCP Configure the server for listen on a TCP addr
 func (s *Server) ListenTCP(addr string) error {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
 	if err != nil {
@@ -140,7 +140,7 @@ func (s *Server) ListenTCP(addr string) error {
 	return nil
 }
 
-//Configure the server for listen on a TCP addr for TLS
+// ListenTCPTLS Configure the server for listen on a TCP addr for TLS
 func (s *Server) ListenTCPTLS(addr string, config *tls.Config) error {
 	listener, err := tls.Listen("tcp", addr, config)
 	if err != nil {
@@ -152,7 +152,7 @@ func (s *Server) ListenTCPTLS(addr string, config *tls.Config) error {
 	return nil
 }
 
-//Starts the server, all the go routines goes to live
+// Boot Starts the server, all the go routines goes to live
 func (s *Server) Boot() error {
 	if s.format == nil {
 		return errors.New("please set a valid format")
@@ -368,7 +368,7 @@ func (s *Server) goParseDatagrams() {
 		defer s.wait.Done()
 		for {
 			select {
-			case msg, ok := (<-s.datagramChannel):
+			case msg, ok := <-s.datagramChannel:
 				if !ok {
 					return
 				}
