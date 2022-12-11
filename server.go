@@ -31,6 +31,7 @@ type TlsPeerNameFunc func(tlsConn *tls.Conn) (tlsPeer string, ok bool)
 type Server struct {
 	listeners               []net.Listener
 	connections             []net.PacketConn
+	socketSize              int
 	wait                    sync.WaitGroup
 	doneTcp                 chan bool
 	datagramChannelSize     int
@@ -58,6 +59,10 @@ func NewServer() *Server {
 // SetFormat Sets the syslog format (RFC3164 or RFC5424 or RFC6587)
 func (s *Server) SetFormat(f format.Format) {
 	s.format = f
+}
+
+func (s *Server) SetSocketSize(i int) {
+	s.socketSize = i
 }
 
 // SetHandler Sets the handler, this handler with receive every syslog entry
@@ -100,7 +105,11 @@ func (s *Server) ListenUDP(addr string) error {
 	if err != nil {
 		return err
 	}
-	connection.SetReadBuffer(datagramReadBufferSize)
+	if s.socketSize == 0 {
+		connection.SetReadBuffer(datagramReadBufferSize)
+	} else {
+		connection.SetReadBuffer(s.socketSize)
+	}
 
 	s.connections = append(s.connections, connection)
 	return nil
