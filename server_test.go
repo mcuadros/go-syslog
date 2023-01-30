@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus/hooks/test"
 	. "gopkg.in/check.v1"
 	"gopkg.in/mcuadros/go-syslog.v2/format"
 )
@@ -23,8 +24,9 @@ var exampleSyslogNoPriority = "Dec 26 05:08:46 hostname test with no priority - 
 var exampleRFC5424Syslog = "<34>1 2003-10-11T22:14:15.003Z mymachine.example.com su - ID47 - 'su root' failed for lonvick on /dev/pts/8"
 
 func (s *ServerSuite) TestTailFile(c *C) {
+	logger, _ := test.NewNullLogger()
 	handler := new(HandlerMock)
-	server := NewServer()
+	server := NewServer(logger)
 	server.SetFormat(RFC3164)
 	server.SetHandler(handler)
 	server.ListenUDP("0.0.0.0:5141")
@@ -113,8 +115,9 @@ func (c *ConnMock) SetWriteDeadline(t time.Time) error {
 }
 
 func (s *ServerSuite) TestConnectionClose(c *C) {
+	logger, _ := test.NewNullLogger()
 	handler := new(HandlerMock)
-	server := NewServer()
+	server := NewServer(logger)
 	server.SetFormat(RFC3164)
 	server.SetHandler(handler)
 	con := ConnMock{ReadData: []byte(exampleSyslog)}
@@ -124,8 +127,9 @@ func (s *ServerSuite) TestConnectionClose(c *C) {
 }
 
 func (s *ServerSuite) TestConnectionUDPKill(c *C) {
+	logger, _ := test.NewNullLogger()
 	handler := new(HandlerMock)
-	server := NewServer()
+	server := NewServer(logger)
 	server.SetFormat(RFC5424)
 	server.SetHandler(handler)
 	con := ConnMock{ReadData: []byte(exampleSyslog)}
@@ -136,8 +140,9 @@ func (s *ServerSuite) TestConnectionUDPKill(c *C) {
 }
 
 func (s *ServerSuite) TestTcpTimeout(c *C) {
+	logger, _ := test.NewNullLogger()
 	handler := new(HandlerMock)
-	server := NewServer()
+	server := NewServer(logger)
 	server.SetFormat(RFC3164)
 	server.SetHandler(handler)
 	server.SetTimeout(10)
@@ -152,8 +157,9 @@ func (s *ServerSuite) TestTcpTimeout(c *C) {
 }
 
 func (s *ServerSuite) TestUDP3164(c *C) {
+	logger, _ := test.NewNullLogger()
 	handler := new(HandlerMock)
-	server := NewServer()
+	server := NewServer(logger)
 	server.SetFormat(RFC3164)
 	server.SetHandler(handler)
 	server.SetTimeout(10)
@@ -169,8 +175,9 @@ func (s *ServerSuite) TestUDP3164(c *C) {
 }
 
 func (s *ServerSuite) TestUDP3164NoTag(c *C) {
+	logger, _ := test.NewNullLogger()
 	handler := new(HandlerMock)
-	server := NewServer()
+	server := NewServer(logger)
 	server.SetFormat(RFC3164)
 	server.SetHandler(handler)
 	server.SetTimeout(10)
@@ -186,8 +193,9 @@ func (s *ServerSuite) TestUDP3164NoTag(c *C) {
 }
 
 func (s *ServerSuite) TestUDPAutomatic3164NoPriority(c *C) {
+	logger, _ := test.NewNullLogger()
 	handler := new(HandlerMock)
-	server := NewServer()
+	server := NewServer(logger)
 	server.SetFormat(Automatic)
 	server.SetHandler(handler)
 	server.SetTimeout(10)
@@ -204,8 +212,9 @@ func (s *ServerSuite) TestUDPAutomatic3164NoPriority(c *C) {
 }
 
 func (s *ServerSuite) TestUDP6587(c *C) {
+	logger, _ := test.NewNullLogger()
 	handler := new(HandlerMock)
-	server := NewServer()
+	server := NewServer(logger)
 	server.SetFormat(RFC6587)
 	server.SetHandler(handler)
 	server.SetTimeout(10)
@@ -222,8 +231,9 @@ func (s *ServerSuite) TestUDP6587(c *C) {
 }
 
 func (s *ServerSuite) TestUDPAutomatic3164(c *C) {
+	logger, _ := test.NewNullLogger()
 	handler := new(HandlerMock)
-	server := NewServer()
+	server := NewServer(logger)
 	server.SetFormat(Automatic)
 	server.SetHandler(handler)
 	server.SetTimeout(10)
@@ -239,8 +249,9 @@ func (s *ServerSuite) TestUDPAutomatic3164(c *C) {
 }
 
 func (s *ServerSuite) TestUDPAutomatic5424(c *C) {
+	logger, _ := test.NewNullLogger()
 	handler := new(HandlerMock)
-	server := NewServer()
+	server := NewServer(logger)
 	server.SetFormat(Automatic)
 	server.SetHandler(handler)
 	server.SetTimeout(10)
@@ -256,8 +267,9 @@ func (s *ServerSuite) TestUDPAutomatic5424(c *C) {
 }
 
 func (s *ServerSuite) TestUDPAutomatic3164Plus6587OctetCount(c *C) {
+	logger, _ := test.NewNullLogger()
 	handler := new(HandlerMock)
-	server := NewServer()
+	server := NewServer(logger)
 	server.SetFormat(Automatic)
 	server.SetHandler(handler)
 	server.SetTimeout(10)
@@ -274,8 +286,9 @@ func (s *ServerSuite) TestUDPAutomatic3164Plus6587OctetCount(c *C) {
 }
 
 func (s *ServerSuite) TestUDPAutomatic5424Plus6587OctetCount(c *C) {
+	logger, _ := test.NewNullLogger()
 	handler := new(HandlerMock)
-	server := NewServer()
+	server := NewServer(logger)
 	server.SetFormat(Automatic)
 	server.SetHandler(handler)
 	server.SetTimeout(10)
@@ -305,8 +318,9 @@ func (s *handlerSlow) Handle(logParts format.LogParts, msgLen int64, err error) 
 }
 
 func (s *ServerSuite) TestUDPRace(c *C) {
+	logger, _ := test.NewNullLogger()
 	handler := &handlerSlow{handlerCounter: &handlerCounter{expected: 3, done: make(chan struct{})}}
-	server := NewServer()
+	server := NewServer(logger)
 	server.SetFormat(Automatic)
 	server.SetHandler(handler)
 	server.SetTimeout(10)
@@ -326,8 +340,9 @@ func (s *ServerSuite) TestUDPRace(c *C) {
 }
 
 func (s *ServerSuite) TestTCPRace(c *C) {
+	logger, _ := test.NewNullLogger()
 	handler := &handlerSlow{handlerCounter: &handlerCounter{expected: 3, done: make(chan struct{})}}
-	server := NewServer()
+	server := NewServer(logger)
 	server.SetFormat(Automatic)
 	server.SetHandler(handler)
 	server.SetTimeout(10)

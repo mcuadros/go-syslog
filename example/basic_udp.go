@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 
 	"gopkg.in/mcuadros/go-syslog.v2"
 )
@@ -10,7 +11,7 @@ func main() {
 	channel := make(syslog.LogPartsChannel)
 	handler := syslog.NewChannelHandler(channel)
 
-	server := syslog.NewServer()
+	server := syslog.NewServer(logrus.New())
 	server.SetFormat(syslog.RFC5424)
 	server.SetHandler(handler)
 	server.ListenUDP("0.0.0.0:514")

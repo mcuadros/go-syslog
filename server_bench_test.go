@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus/hooks/test"
 	"gopkg.in/mcuadros/go-syslog.v2/format"
 )
 
@@ -71,8 +72,9 @@ func (c *fakePacketConn) SetWriteDeadline(t time.Time) error {
 }
 
 func BenchmarkDatagramNoFormatting(b *testing.B) {
+	logger, _ := test.NewNullLogger()
 	handler := &handlerCounter{expected: b.N, done: make(chan struct{})}
-	server := NewServer()
+	server := NewServer(logger)
 	defer server.Kill()
 	server.SetFormat(noopFormatter{})
 	server.SetHandler(handler)
@@ -88,8 +90,9 @@ func BenchmarkDatagramNoFormatting(b *testing.B) {
 }
 
 func BenchmarkTCPNoFormatting(b *testing.B) {
+	logger, _ := test.NewNullLogger()
 	handler := &handlerCounter{expected: b.N, done: make(chan struct{})}
-	server := NewServer()
+	server := NewServer(logger)
 	defer server.Kill()
 	server.SetFormat(noopFormatter{})
 	server.SetHandler(handler)
