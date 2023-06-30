@@ -105,7 +105,9 @@ func (p *Parser) parsePriority() (syslogparser.Priority, error) {
 
 func (p *Parser) parseHeader() (header, error) {
 	hdr := header{}
-	var err error
+	if p.cursor >= p.l {
+		return hdr, syslogparser.ErrEOL
+	}
 
 	ts, err := p.parseTimestamp()
 	if err != nil {
