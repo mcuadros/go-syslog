@@ -310,6 +310,23 @@ func (s *Rfc3164TestSuite) TestParseContent_Valid(c *C) {
 	c.Assert(p.cursor, Equals, len(content))
 }
 
+func (s *Rfc3164TestSuite) TestParser_PriorityOnly(c *C) {
+	buff := []byte("<34>")
+
+	p := NewParser(buff)
+	expectedP := &Parser{
+		buff:     buff,
+		cursor:   0,
+		l:        len(buff),
+		location: time.UTC,
+	}
+
+	c.Assert(p, DeepEquals, expectedP)
+
+	err := p.Parse()
+	c.Assert(err, Equals, syslogparser.ErrEOL)
+}
+
 func (s *Rfc3164TestSuite) BenchmarkParseTimestamp(c *C) {
 	buff := []byte("Oct 11 22:14:15")
 
