@@ -27,13 +27,13 @@ func (s *ServerSuite) TestTailFile(c *C) {
 	server := NewServer()
 	server.SetFormat(RFC3164)
 	server.SetHandler(handler)
-	server.ListenUDP("0.0.0.0:5141")
-	server.ListenTCP("0.0.0.0:5141")
+	server.ListenUDP("127.0.0.1:0")
+	server.ListenTCP("127.0.0.1:0")
 
 	go func(server *Server) {
 		time.Sleep(100 * time.Millisecond)
 
-		serverAddr, _ := net.ResolveUDPAddr("udp", "localhost:5141")
+		serverAddr, _ := net.ResolveUDPAddr("udp", server.connections[0].LocalAddr().String())
 		con, _ := net.DialUDP("udp", nil, serverAddr)
 		con.Write([]byte(exampleSyslog))
 		time.Sleep(100 * time.Millisecond)
