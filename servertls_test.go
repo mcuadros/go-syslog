@@ -59,12 +59,12 @@ func (s *ServerSuite) TestTLS(c *C) {
 	server := NewServer()
 	server.SetFormat(RFC3164)
 	server.SetHandler(handler)
-	server.ListenTCPTLS("0.0.0.0:5143", getServerConfig())
+	server.ListenTCPTLS("127.0.0.1:0", getServerConfig())
 
 	server.Boot()
 	go func(server *Server) {
 		time.Sleep(100 * time.Millisecond)
-		conn, err := tls.Dial("tcp", "127.0.0.1:5143", getClientConfig())
+		conn, err := tls.Dial("tcp", server.listeners[0].Addr().String(), getClientConfig())
 		if err != nil {
 			panic(err)
 		}
