@@ -106,7 +106,20 @@ func (s *Server) ListenUDP(addr string) error {
 	return nil
 }
 
-//Configure the server for listen on an unix socket
+func (s *Server) AddListener(l net.Listener) {
+	if l != nil {
+		s.listeners = append(s.listeners, l)
+	}
+}
+
+func (s *Server) AddConnection(conn *net.UDPConn) {
+	if conn != nil {
+		conn.SetReadBuffer(datagramReadBufferSize)
+		s.connections = append(s.connections, conn)
+	}
+}
+
+// Configure the server for listen on an unix socket
 func (s *Server) ListenUnixgram(addr string) error {
 	unixAddr, err := net.ResolveUnixAddr("unixgram", addr)
 	if err != nil {
